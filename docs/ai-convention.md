@@ -2,7 +2,7 @@
 
 LangChain과 FastAPI 기반 AI 서버 개발 시 지켜야 할 최소 컨벤션입니다.
 
-[Notion](https://www.notion.so/dahyeonii/AI-Convention-344b91841cc5806f83b5ea30e2e1dfe3) 과 [해당 문서](https://github.com/Scrap-Notify/san-ai/blob/main/docs/ai-convention.md) 내용은 동기화되도록 관리합니다.
+[Notion](https://www.notion.so/dahyeonii/AI-Convention-344b91841cc5806f83b5ea30e2e1dfe3) 과 [GitHub 문서](https://github.com/Scrap-Notify/san-ai/blob/main/docs/ai-convention.md) 내용은 동기화되도록 관리합니다.
 
 # 1. 코드 스타일 & 포맷터
 
