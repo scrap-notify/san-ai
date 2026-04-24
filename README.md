@@ -23,6 +23,19 @@ cp .env.example .env
 uv run fastapi dev app/main.py
 ```
 
+## Docker
+
+```bash
+# 환경 변수 설정
+cp .env.example .env
+
+# 컨테이너 빌드 및 실행
+docker compose up --build
+
+# health check
+curl http://localhost:8001/health
+```
+
 ## 개발 컨벤션
 
 [docs/ai-convention.md](docs/ai-convention.md) 참고
