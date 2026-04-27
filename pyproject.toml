@@ -5,7 +5,7 @@ description = "Scrap-And-Notify 서비스 AI 서버"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.136.0",
+    "fastapi[standard]>=0.136.0",
     "langchain>=1.2.15",
     "langchain-openai>=1.1.16",
     "langchain-qdrant>=1.1.0",
