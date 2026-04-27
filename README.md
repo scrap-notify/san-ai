@@ -20,7 +20,7 @@ uv sync
 cp .env.example .env
 
 # 개발 서버 실행
-uv run fastapi dev app/main.py
+uv run fastapi dev app/main.py --port 8001
 ```
 
 ## Docker
