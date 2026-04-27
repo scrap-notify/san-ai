@@ -1,0 +1,19 @@
+name: PR Mattermost Notify
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send PR notification to Mattermost
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+          -d "{
+            \"username\": \"GitHub PR Bot\",
+            \"text\": \"### 🔔 GitHub PR 알림\n**${{ github.event.pull_request.title }}**\n\n- 레포: ${{ github.repository }}\n- 작성자: ${{ github.actor }}\n- 브랜치: \`${{ github.head_ref }}\` → \`${{ github.base_ref }}\`\n- 상태: ${{ github.event.action }}\n- 링크: ${{ github.event.pull_request.html_url }}\"
+          }" \
+          "${{ secrets.MATTERMOST_WEBHOOK_URL }}"
