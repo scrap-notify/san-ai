@@ -1,0 +1,25 @@
+[project]
+name = "san-ai"
+version = "0.1.0"
+description = "Scrap-And-Notify 서비스 AI 서버"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.136.0",
+    "langchain>=1.2.15",
+    "langchain-openai>=1.1.16",
+    "langchain-qdrant>=1.1.0",
+    "pydantic-settings>=2.14.0",
+    "python-dotenv>=1.2.2",
+    "uvicorn[standard]>=0.45.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=26.3.1",
+    "pytest>=9.0.3",
+    "ruff>=0.15.11",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

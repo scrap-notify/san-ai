@@ -1,0 +1,9 @@
+services:
+  ai-server:
+    build:
+      context: .
+    container_name: san-ai-server
+    env_file:
+      - .env
+    ports:
+      - "8001:8001"
