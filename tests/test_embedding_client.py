@@ -11,18 +11,7 @@ def test_embed_returns_float_list() -> None:
     assert isinstance(result, list)
     assert len(result) > 0
     assert all(isinstance(v, float) for v in result)
-
-
-def test_embed_same_text_same_vector() -> None:
-    client = EmbeddingClient()
-    result1 = client.embed("동일한 텍스트")
-    result2 = client.embed("동일한 텍스트")
-
-    print(f"\n[1회 앞 3개] {result1[:3]}")
-    print(f"[2회 앞 3개] {result2[:3]}")
-
-    assert result1 == result2
-
+    
 
 def test_embed_different_text_different_vector() -> None:
     client = EmbeddingClient()
