@@ -63,7 +63,7 @@ jobs:
             git pull origin main
 
             # .env 복사
-            cp /var/net/san/.env.ai .env
+            cp /var/www/san/.env.ai .env
 
             # Docker 배포
             docker compose down || true
