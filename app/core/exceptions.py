@@ -3,12 +3,40 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 
+class ClientInputError(Exception):
+    """요청 도메인 검증 단계에서 발생하는 오류. 400으로 응답한다."""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.message = message
+
+
 class AIProcessingError(Exception):
     """LLM 호출, 임베딩 생성 등 AI 처리 단계에서 발생하는 오류. 422로 응답한다."""
 
     def __init__(self, code: str, message: str):
         self.code = code
         self.message = message
+
+
+class MissingContentsError(ClientInputError):
+    def __init__(self, message: str = "contents가 비어 있습니다."):
+        super().__init__("missing_contents", message)
+
+
+class InvalidInputTypeError(ClientInputError):
+    def __init__(self, message: str = "지원하지 않는 input_type입니다."):
+        super().__init__("invalid_input_type", message)
+
+
+class TilGenerationError(AIProcessingError):
+    def __init__(self, message: str = "TIL 생성에 실패했습니다."):
+        super().__init__("til_generation_failed", message)
+
+
+class EmbeddingError(AIProcessingError):
+    def __init__(self, message: str = "임베딩 생성에 실패했습니다."):
+        super().__init__("embedding_failed", message)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -19,6 +47,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=400,
             content={"code": "INVALID_INPUT", "message": str(exc.errors()[0]["msg"])},
+        )
+
+    @app.exception_handler(ClientInputError)
+    async def client_input_exception_handler(request: Request, exc: ClientInputError):
+        return JSONResponse(
+            status_code=400,
+            content={"code": exc.code, "message": exc.message},
         )
 
     @app.exception_handler(AIProcessingError)
