@@ -1,11 +1,21 @@
+import os
 from unittest.mock import MagicMock
 
 import pytest
+from dotenv import load_dotenv
 
 from app.core.exceptions import AIProcessingError
 from app.llms.client import LLMClient
 
+load_dotenv()
 
+skip_if_no_key = pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="OPENAI_API_KEY 없음 — 외부 API 테스트 스킵",
+)
+
+
+@skip_if_no_key
 def test_call_returns_string() -> None:
     client = LLMClient()
     result = client.call("'hello'라고만 답해줘.", error_code="analyze_failed")
@@ -16,6 +26,7 @@ def test_call_returns_string() -> None:
     assert len(result) > 0
 
 
+@skip_if_no_key
 def test_call_json_returns_dict() -> None:
     client = LLMClient()
     result = client.call_json(
