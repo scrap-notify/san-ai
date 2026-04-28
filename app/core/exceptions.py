@@ -6,7 +6,8 @@ from fastapi.responses import JSONResponse
 class AIProcessingError(Exception):
     """LLM 호출, 임베딩 생성 등 AI 처리 단계에서 발생하는 오류. 422로 응답한다."""
 
-    def __init__(self, message: str):
+    def __init__(self, code: str, message: str):
+        self.code = code
         self.message = message
 
 
@@ -24,7 +25,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def ai_processing_exception_handler(request: Request, exc: AIProcessingError):
         return JSONResponse(
             status_code=422,
-            content={"code": "AI_PROCESSING_FAILED", "message": exc.message},
+            content={"code": exc.code, "message": exc.message},
         )
 
     # 명시적으로 처리되지 않은 예외를 잡는 최후의 핸들러. 내부 오류를 외부에 노출하지 않는다.
