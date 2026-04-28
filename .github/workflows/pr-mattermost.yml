@@ -2,7 +2,7 @@ name: PR Mattermost Notify
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, closed]
 
 jobs:
   notify:
@@ -11,9 +11,30 @@ jobs:
     steps:
       - name: Send PR notification to Mattermost
         run: |
+          if [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            STATUS="MERGED ✅"
+            TITLE="🚀 Pull Request Merged"
+          elif [ "${{ github.event.action }}" = "closed" ]; then
+            STATUS="CLOSED ❌"
+            TITLE="🛑 Pull Request Closed"
+          elif [ "${{ github.event.action }}" = "opened" ]; then
+            STATUS="OPENED ✨"
+            TITLE="✨ New Pull Request"
+          elif [ "${{ github.event.action }}" = "synchronize" ]; then
+            STATUS="UPDATED 🔄"
+            TITLE="🔄 Pull Request Updated"
+          elif [ "${{ github.event.action }}" = "ready_for_review" ]; then
+            STATUS="READY 👀"
+            TITLE="👀 Ready for Review"
+          else
+            STATUS="${{ github.event.action }}"
+            TITLE="GitHub Pull Request"
+          fi
+
           curl -X POST -H 'Content-Type: application/json' \
           -d "{
             \"username\": \"GitHub PR Bot\",
-            \"text\": \"### 🔔 GitHub PR 알림\n**${{ github.event.pull_request.title }}**\n\n- 레포: ${{ github.repository }}\n- 작성자: ${{ github.actor }}\n- 브랜치: \`${{ github.head_ref }}\` → \`${{ github.base_ref }}\`\n- 상태: ${{ github.event.action }}\n- 링크: ${{ github.event.pull_request.html_url }}\"
+            \"icon_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\",
+            \"text\": \"### ${TITLE}\n> **${{ github.event.pull_request.title }}**\n\n---\n\n| 항목 | 내용 |\n|---|---|\n| Repository | `${{ github.repository }}` |\n| Author | `${{ github.actor }}` |\n| Branch | `${{ github.head_ref }}` → `${{ github.base_ref }}` |\n| Status | **${STATUS}** |\n\n🔗 [PR 바로가기](${{ github.event.pull_request.html_url }})\"
           }" \
           "${{ secrets.MATTERMOST_WEBHOOK_URL }}"
