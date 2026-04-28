@@ -29,4 +29,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@${GITLAB_REPO}"
-          git push gitlab HEAD:refs/heads/${TARGET_BRANCH}
+
+          git fetch gitlab refs/heads/${TARGET_BRANCH}:refs/remotes/gitlab/${TARGET_BRANCH} || true
+
+          git push --force-with-lease=refs/heads/${TARGET_BRANCH} gitlab HEAD:refs/heads/${TARGET_BRANCH}
