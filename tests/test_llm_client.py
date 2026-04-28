@@ -1,5 +1,5 @@
 import os
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from dotenv import load_dotenv
@@ -40,7 +40,8 @@ def test_call_json_returns_dict() -> None:
 
 
 def test_call_json_raises_on_invalid_json() -> None:
-    client = LLMClient()
+    with patch("app.llms.client.create_openai_chat_model"):
+        client = LLMClient()
 
     mock_response = MagicMock()
     mock_response.content = "not json"
