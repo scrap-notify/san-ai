@@ -35,6 +35,6 @@ jobs:
           -d "{
             \"username\": \"GitHub PR Bot\",
             \"icon_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\",
-            \"text\": \"### ${TITLE}\n> **${{ github.event.pull_request.title }}**\n\n---\n\n| 항목 | 내용 |\n|---|---|\n| Repository | `${{ github.repository }}` |\n| Author | `${{ github.actor }}` |\n| Branch | `${{ github.head_ref }}` → `${{ github.base_ref }}` |\n| Status | **${STATUS}** |\n\n🔗 [PR 바로가기](${{ github.event.pull_request.html_url }})\"
+            \"text\": \"### ${TITLE}\n> **${{ github.event.pull_request.title }}**\n\n---\n\n| 항목 | 내용 |\n|---|---|\n| Repository | ${{ github.repository }} |\n| Author | ${{ github.actor }} |\n| Branch | ${{ github.head_ref }} → ${{ github.base_ref }} |\n| Status | **${STATUS}** |\n\n🔗 [PR 바로가기](${{ github.event.pull_request.html_url }})\"
           }" \
           "${{ secrets.MATTERMOST_WEBHOOK_URL }}"
