@@ -28,7 +28,7 @@ uv run fastapi dev app/main.py
 운영 환경에서는 다음과 같이 실행합니다.
 
 ```bash
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
 # 3. 주석
