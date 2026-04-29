@@ -11,16 +11,35 @@ class AIProcessingError(Exception):
         self.message = message
 
 
+class ContentValidationError(Exception):
+    """입력값 검증 실패(빈 값, 잘못된 URL 등) 시 발생하는 오류. 400으로 응답한다."""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.message = message
+
+
 def register_exception_handlers(app: FastAPI) -> None:
-    # FastAPI 기본 동작은 RequestValidationError를 422로 반환하지만,
-    # 요청값 형식 오류는 클라이언트 잘못이므로 400으로 재정의한다.
-    @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # ContentValidationError는 400 상태 코드로 반환한다.
+    @app.exception_handler(ContentValidationError)
+    async def content_validation_exception_handler(request: Request, exc: ContentValidationError):
         return JSONResponse(
             status_code=400,
-            content={"code": "INVALID_INPUT", "message": str(exc.errors()[0]["msg"])},
+            content={"code": exc.code, "message": exc.message},
         )
 
+    # RequestValidationError는 FastAPI의 요청 검증 실패 시 발생하는 예외로, 400 상태 코드와 함께 적절한 오류 코드를 반환한다.
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        error = exc.errors()[0]
+        loc = error.get("loc", ())
+        code = "invalid_input_type" if "input_type" in loc else "INVALID_INPUT"
+        return JSONResponse(
+            status_code=400,
+            content={"code": code, "message": str(error["msg"])},
+        )
+    
+    # AIProcessingError는 422 상태 코드로 반환한다.
     @app.exception_handler(AIProcessingError)
     async def ai_processing_exception_handler(request: Request, exc: AIProcessingError):
         return JSONResponse(
@@ -28,7 +47,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={"code": exc.code, "message": exc.message},
         )
 
-    # 명시적으로 처리되지 않은 예외를 잡는 최후의 핸들러. 내부 오류를 외부에 노출하지 않는다.
+    # 명시적으로 처리되지 않은 예외는 500 상태 코드로 반환한다.
     @app.exception_handler(Exception)
     async def internal_exception_handler(request: Request, exc: Exception):
         return JSONResponse(
