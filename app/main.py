@@ -15,7 +15,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="SAN AI Server")
     register_exception_handlers(app)
     app.include_router(health_router)
-    app.include_router(api_router, prefix="/api/v1")
+    app.include_router(api_router, prefix="/ai")
 
     return app
 

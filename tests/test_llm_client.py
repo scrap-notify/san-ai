@@ -1,4 +1,6 @@
+import base64
 import os
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,6 +15,8 @@ skip_if_no_key = pytest.mark.skipif(
     not os.getenv("OPENAI_API_KEY"),
     reason="OPENAI_API_KEY 없음 — 외부 API 테스트 스킵",
 )
+
+_IMAGE_FIXTURE = Path("tests/fixtures/test_image.png")
 
 
 @skip_if_no_key
@@ -37,6 +41,19 @@ def test_call_json_returns_dict() -> None:
     print(f"\n[LLM JSON 응답] {result}")
 
     assert isinstance(result, dict)
+
+
+@skip_if_no_key
+def test_call_with_image_returns_string() -> None:
+    client = LLMClient()
+    data_url = "data:image/png;base64," + base64.b64encode(_IMAGE_FIXTURE.read_bytes()).decode()
+
+    result = client.call_with_image("이 이미지를 한국어로 설명해줘.", data_url, error_code="test_failed")
+
+    print(f"\n[LLM 이미지 응답] {result}")
+
+    assert isinstance(result, str)
+    assert len(result) > 0
 
 
 def test_call_json_raises_on_invalid_json() -> None:
