@@ -8,6 +8,14 @@ from app.llms import LLMClient
 from app.prompts import IMAGE_DESCRIBE_PROMPT
 from app.schemas.common import InputType
 
+_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+
 # 전처리 모듈은 입력된 콘텐츠 유형에 따라 텍스트, URL, 이미지에 대한 전처리를 수행. URL의 경우 본문을 추출, 이미지의 경우 LLM을 활용하여 설명 텍스트로 변환.
 def _validate_url(content: str) -> None:
     parsed = urlparse(content)
@@ -26,7 +34,7 @@ async def _preprocess_url(content: str) -> str:
     _validate_url(content)
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True, headers=_HEADERS) as client:
             response = await client.get(content)
             response.raise_for_status()
     except ContentValidationError:
@@ -34,7 +42,12 @@ async def _preprocess_url(content: str) -> str:
     except Exception as e:
         raise AIProcessingError(code="url_fetch_failed", message=f"URL 요청 실패: {e}") from e
 
-    body = trafilatura.extract(response.text)
+    body = trafilatura.extract(
+        response.text,
+        include_tables=True,
+        no_fallback=False,
+        favor_recall=True,
+    )
     if not body:
         raise AIProcessingError(code="url_content_empty", message="URL에서 본문을 추출할 수 없습니다.")
 
@@ -45,7 +58,7 @@ async def _preprocess_image(content: str) -> str:
     _validate_url(content)
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, headers=_HEADERS) as client:
             head = await client.head(content, follow_redirects=True)
             head.raise_for_status()
     except ContentValidationError:

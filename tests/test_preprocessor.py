@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -6,6 +7,19 @@ import pytest
 from app.core.exceptions import AIProcessingError, ContentValidationError
 from app.schemas.common import InputType
 from app.services.preprocessor import preprocess
+
+_URL_FIXTURE = Path("tests/fixtures/test_url.txt")
+_IMAGE_URL_FIXTURE = Path("tests/fixtures/test_image_url.txt")
+
+skip_if_no_url = pytest.mark.skipif(
+    not _URL_FIXTURE.exists() or not _URL_FIXTURE.read_text().strip(),
+    reason="tests/fixtures/test_url.txt 없거나 비어있음 — URL 통합 테스트 스킵",
+)
+
+skip_if_no_image_url = pytest.mark.skipif(
+    not _IMAGE_URL_FIXTURE.exists() or not _IMAGE_URL_FIXTURE.read_text().strip(),
+    reason="tests/fixtures/test_image_url.txt 없거나 비어있음 — 이미지 통합 테스트 스킵",
+)
 
 
 # ── text ──────────────────────────────────────────────────────────────────────
@@ -158,3 +172,29 @@ def test_image_success_returns_description() -> None:
             result = asyncio.run(preprocess(InputType.image, "https://s3.amazonaws.com/bucket/image.png"))
 
     assert result == "이미지에는 파이썬 코드가 포함되어 있습니다."
+
+
+# ── 통합 테스트 (실제 네트워크 + 실제 본문 추출) ──────────────────────────────────
+
+@skip_if_no_url
+def test_url_real_extraction_returns_body() -> None:
+    url = _URL_FIXTURE.read_text().strip()
+
+    result = asyncio.run(preprocess(InputType.url, url))
+
+    print(f"\n[URL 추출 결과 ({url})] 총 {len(result)}자\n{result[:2000]}")
+
+    assert isinstance(result, str)
+    assert len(result) > 100
+
+
+@skip_if_no_image_url
+def test_image_real_analysis_returns_description() -> None:
+    url = _IMAGE_URL_FIXTURE.read_text().strip()
+
+    result = asyncio.run(preprocess(InputType.image, url))
+
+    print(f"\n[이미지 분석 결과 ({url})]\n{result[:500]}")
+
+    assert isinstance(result, str)
+    assert len(result) > 20
