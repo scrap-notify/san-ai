@@ -56,7 +56,7 @@ def test_analyze_text_success() -> None:
 
     result = asyncio.run(analyze(InputType.text, text))
 
-    print(f"\n[analyze - text]")
+    print("\n[analyze - text]")
     print(f"  title   : {result.title}")
     print(f"  summary : {result.summary}")
     print(f"  tags    : {result.tags}")
