@@ -25,7 +25,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def content_validation_exception_handler(request: Request, exc: ContentValidationError):
         return JSONResponse(
             status_code=400,
-            content={"code": exc.code, "message": exc.message},
+            content={"error": exc.code, "message": exc.message},
         )
 
     # RequestValidationError는 FastAPI의 요청 검증 실패 시 발생하는 예외로, 400 상태 코드와 함께 적절한 오류 코드를 반환한다.
@@ -36,7 +36,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         code = "invalid_input_type" if "input_type" in loc else "INVALID_INPUT"
         return JSONResponse(
             status_code=400,
-            content={"code": code, "message": str(error["msg"])},
+            content={"error": code, "message": str(error["msg"])},
         )
     
     # AIProcessingError는 422 상태 코드로 반환한다.
@@ -44,7 +44,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def ai_processing_exception_handler(request: Request, exc: AIProcessingError):
         return JSONResponse(
             status_code=422,
-            content={"code": exc.code, "message": exc.message},
+            content={"error": exc.code, "message": exc.message},
         )
 
     # 명시적으로 처리되지 않은 예외는 500 상태 코드로 반환한다.
