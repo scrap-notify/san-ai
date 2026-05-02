@@ -6,4 +6,4 @@ class SearchRequest(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    embeddings: list[float]
+    embedding: list[float]
