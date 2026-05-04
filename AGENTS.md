@@ -14,3 +14,7 @@
 ### Branch Convention
 - 브랜치 생성 규칙: `type/scope/ticket_number`
 - 예시: feat/user/S14P31A309-123
+
+### Lint
+
+- GitHub CI에서 Ruff 검사가 실패하면 빌드가 중단됩니다. push 전 `uv run ruff check .` 를 실행하여 통과하는지 확인하세요.
