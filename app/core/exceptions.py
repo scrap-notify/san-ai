@@ -52,5 +52,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def internal_exception_handler(request: Request, exc: Exception):
         return JSONResponse(
             status_code=500,
-            content={"code": "INTERNAL_SERVER_ERROR", "message": "서버 내부 오류가 발생했습니다."},
+            content={"error": "INTERNAL_SERVER_ERROR", "message": "서버 내부 오류가 발생했습니다."},
         )
