@@ -105,7 +105,7 @@
 | 필드명 | 타입 | 설명 |
 | --- | --- | --- |
 | `til_markdown` | `string | null` | `generate_til=true`일 때만 반환. 카드별 단순 나열이 아닌 주제별로 구조화된 마크다운 문서. `false`이면 `null` |
-| `embeddings` | `number[]` | 임베딩 벡터 결과값 |
+| `embedding` | `number[]` | 임베딩 벡터 결과값 |
 
 ### 요청/응답 예시
 
