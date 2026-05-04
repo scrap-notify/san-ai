@@ -33,7 +33,12 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         error = exc.errors()[0]
         loc = error.get("loc", ())
-        code = "invalid_input_type" if "input_type" in loc else "INVALID_INPUT"
+        if "input_type" in loc:
+            code = "invalid_input_type"
+        elif loc and loc[-1] == "contents":
+            code = "missing_contents"
+        else:
+            code = "INVALID_INPUT"
         return JSONResponse(
             status_code=400,
             content={"error": code, "message": str(error["msg"])},
