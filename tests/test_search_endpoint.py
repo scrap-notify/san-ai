@@ -32,14 +32,14 @@ def test_missing_query_field_returns_400() -> None:
 def test_empty_query_returns_400() -> None:
     response = client.post("/ai/search", json={"query": ""})
     assert response.status_code == 400
-    assert response.json()["code"] == "missing_query"
+    assert response.json()["error"] == "missing_query"
 
 
 # query가 공백만 있는 경우에도 400 상태 코드와 "missing_query" 오류 코드를 반환하는지 검증.
 def test_whitespace_query_returns_400() -> None:
     response = client.post("/ai/search", json={"query": "   "})
     assert response.status_code == 400
-    assert response.json()["code"] == "missing_query"
+    assert response.json()["error"] == "missing_query"
 
 
 # ── 임베딩 실패 ────────────────────────────────────────────────────────────────
@@ -53,4 +53,4 @@ def test_embedding_failure_returns_422() -> None:
         response = client.post("/ai/search", json={"query": "리액트"})
 
     assert response.status_code == 422
-    assert response.json()["code"] == "embedding_failed"
+    assert response.json()["error"] == "embedding_failed"

@@ -12,5 +12,5 @@ class InputType(StrEnum):
 
 class ErrorResponse(BaseModel):
     # API 클라이언트가 에러 종류를 코드로 분기 처리할 수 있도록 문자열 코드를 포함한다.
-    code: str
+    error: str
     message: str
