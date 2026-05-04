@@ -24,11 +24,11 @@ def test_ai_processing_error_returns_422() -> None:
 def test_ai_processing_error_code_in_body() -> None:
     response = client.get("/test-error/analyze_failed")
 
-    assert response.json()["code"] == "analyze_failed"
+    assert response.json()["error"] == "analyze_failed"
 
 # AIProcessingError의 code가 다양한 값으로 설정되어도 올바르게 반환되는지 테스트
 def test_ai_processing_error_different_codes() -> None:
     for code in ("analyze_failed", "til_generation_failed", "embedding_failed"):
         response = client.get(f"/test-error/{code}")
 
-        assert response.json()["code"] == code
+        assert response.json()["error"] == code

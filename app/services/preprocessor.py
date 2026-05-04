@@ -1,3 +1,4 @@
+import asyncio
 from urllib.parse import urlparse
 
 import httpx
@@ -67,7 +68,8 @@ async def _preprocess_image(content: str) -> str:
         raise AIProcessingError(code="image_access_failed", message=f"이미지 URL 접근 실패: {e}") from e
 
     llm = LLMClient()
-    return llm.call_with_image(
+    return await asyncio.to_thread(
+        llm.call_with_image,
         prompt=IMAGE_DESCRIBE_PROMPT,
         image_url=content,
         error_code="image_analysis_failed",

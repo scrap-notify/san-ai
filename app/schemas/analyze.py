@@ -14,4 +14,4 @@ class AnalyzeResponse(BaseModel):
     summary: str
     tags: list[str]
     category: str
-    embeddings: list[float]
+    embedding: list[float]
