@@ -18,4 +18,4 @@ class TilResponse(BaseModel):
     # generate_til=False이면 null을 반환한다.
     til_markdown: str | None
     # 카드별 개별 임베딩이 아닌 전체 contents를 통합한 임베딩 벡터 1개를 반환한다.
-    embeddings: list[float]
+    embedding: list[float]

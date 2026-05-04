@@ -27,6 +27,6 @@ async def generate_til(request: TilRequest) -> TilResponse:
 
     # generate_til=True이면 생성된 TIL 마크다운 자체를, 아니면 전처리된 원문 통합본을 임베딩한다.
     embedding_input = til_markdown if til_markdown is not None else joined
-    embeddings = EmbeddingClient().embed(embedding_input)
+    embedding = EmbeddingClient().embed(embedding_input)
 
-    return TilResponse(til_markdown=til_markdown, embeddings=embeddings)
+    return TilResponse(til_markdown=til_markdown, embedding=embedding)

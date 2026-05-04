@@ -43,8 +43,8 @@ def test_missing_generate_til_returns_400() -> None:
 
 
 # ── 정상 처리 ─────────────────────────────────────────────────────────────────
-# generate_til=true이면 til_markdown과 embeddings를 함께 반환한다.
-def test_generate_true_returns_markdown_and_embeddings() -> None:
+# generate_til=true이면 til_markdown과 embedding를 함께 반환한다.
+def test_generate_true_returns_markdown_and_embedding() -> None:
     with patch("app.services.til.preprocess", new=AsyncMock(side_effect=lambda t, c: c)), \
          patch("app.services.til.LLMClient") as llm_cls, \
          patch("app.services.til.EmbeddingClient") as emb_cls:
@@ -65,12 +65,12 @@ def test_generate_true_returns_markdown_and_embeddings() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["til_markdown"] == "# TIL\n\n## 주제\n본문"
-    assert body["embeddings"] == [0.1, 0.2]
+    assert body["embedding"] == [0.1, 0.2]
     # 임베딩은 생성된 마크다운을 입력으로 받는다.
     emb_cls.return_value.embed.assert_called_once_with("# TIL\n\n## 주제\n본문")
 
 
-# generate_til=false이면 til_markdown은 null, embeddings만 반환하며 LLM은 호출되지 않는다.
+# generate_til=false이면 til_markdown은 null, embedding만 반환하며 LLM은 호출되지 않는다.
 def test_generate_false_returns_null_markdown_only() -> None:
     with patch("app.services.til.preprocess", new=AsyncMock(side_effect=lambda t, c: c)), \
          patch("app.services.til.LLMClient") as llm_cls, \
@@ -88,7 +88,7 @@ def test_generate_false_returns_null_markdown_only() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["til_markdown"] is None
-    assert body["embeddings"] == [0.5]
+    assert body["embedding"] == [0.5]
     llm_cls.return_value.call.assert_not_called()
 
 
