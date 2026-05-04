@@ -1,0 +1,157 @@
+### SAN AI Server — REST Client 테스트 파일
+### VS Code "REST Client" 확장 필요 (humao.rest-client)
+
+@baseUrl = http://localhost:8001
+
+# ──────────────────────────────────────────
+# 1. 헬스체크
+# ──────────────────────────────────────────
+
+### [1] 헬스체크 — 정상
+GET {{baseUrl}}/health
+
+
+# ──────────────────────────────────────────
+# 2. POST /ai/analyze
+# ──────────────────────────────────────────
+
+### [2] 분석 — URL 입력 (정상)
+POST {{baseUrl}}/ai/analyze
+Content-Type: application/json
+
+{
+  "input_type": "url",
+  "content": "https://react.dev/learn/managing-state"
+}
+
+###
+
+### [3] 분석 — 텍스트 입력 (정상)
+POST {{baseUrl}}/ai/analyze
+Content-Type: application/json
+
+{
+  "input_type": "text",
+  "content": "클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다."
+}
+
+###
+
+### [4] 분석 — 이미지 입력 (정상)
+POST {{baseUrl}}/ai/analyze
+Content-Type: application/json
+
+{
+  "input_type": "image",
+  "content": "https://s3.amazonaws.com/bucket/capture.png"
+}
+
+###
+
+### [5] 분석 — content 빈 문자열 → 400
+POST {{baseUrl}}/ai/analyze
+Content-Type: application/json
+
+{
+  "input_type": "text",
+  "content": ""
+}
+
+###
+
+### [6] 분석 — input_type 잘못된 값 → 400 (RequestValidationError)
+POST {{baseUrl}}/ai/analyze
+Content-Type: application/json
+
+{
+  "input_type": "video",
+  "content": "https://example.com"
+}
+
+
+# ──────────────────────────────────────────
+# 3. POST /ai/til
+# ──────────────────────────────────────────
+
+### [7] TIL 생성 — generate_til=true (마크다운 + 임베딩)
+POST {{baseUrl}}/ai/til
+Content-Type: application/json
+
+{
+  "contents": [
+    { "input_type": "url", "content": "https://react.dev/learn/managing-state" },
+    { "input_type": "text", "content": "클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다." },
+    { "input_type": "image", "content": "https://s3.amazonaws.com/bucket/capture.png" }
+  ],
+  "generate_til": true
+}
+
+###
+
+### [8] TIL 생성 — generate_til=false (임베딩만, til_markdown=null)
+POST {{baseUrl}}/ai/til
+Content-Type: application/json
+
+{
+  "contents": [
+    { "input_type": "url", "content": "https://react.dev/learn/managing-state" }
+  ],
+  "generate_til": false
+}
+
+###
+
+### [9] TIL 생성 — contents 빈 배열 → 400
+POST {{baseUrl}}/ai/til
+Content-Type: application/json
+
+{
+  "contents": [],
+  "generate_til": true
+}
+
+###
+
+### [10] TIL 생성 — content 빈 문자열 → 400
+POST {{baseUrl}}/ai/til
+Content-Type: application/json
+
+{
+  "contents": [
+    { "input_type": "text", "content": "" }
+  ],
+  "generate_til": true
+}
+
+
+# ──────────────────────────────────────────
+# 4. POST /ai/search
+# ──────────────────────────────────────────
+
+### [11] 검색 — 정상
+POST {{baseUrl}}/ai/search
+Content-Type: application/json
+
+{
+  "query": "리액트 상태관리 개념 정리"
+}
+
+###
+
+### [12] 검색 — query 빈 문자열 → 400
+POST {{baseUrl}}/ai/search
+Content-Type: application/json
+
+{
+  "query": ""
+}
+
+###
+
+### [13] 검색 — query 공백만 → 400
+POST {{baseUrl}}/ai/search
+Content-Type: application/json
+
+{
+  "query": "   "
+}
