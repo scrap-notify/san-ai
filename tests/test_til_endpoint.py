@@ -13,14 +13,14 @@ client = TestClient(app)
 def test_empty_contents_returns_400() -> None:
     response = client.post("/ai/til", json={"contents": [], "generate_til": True})
     assert response.status_code == 400
-    assert response.json()["code"] == "missing_contents"
+    assert response.json()["error"] == "missing_contents"
 
 
 # contents 필드가 누락되면 400 missing_contents.
 def test_missing_contents_field_returns_400() -> None:
     response = client.post("/ai/til", json={"generate_til": True})
     assert response.status_code == 400
-    assert response.json()["code"] == "missing_contents"
+    assert response.json()["error"] == "missing_contents"
 
 
 # contents 내 input_type이 유효하지 않으면 400 invalid_input_type.
@@ -30,7 +30,7 @@ def test_invalid_input_type_returns_400() -> None:
         json={"contents": [{"input_type": "video", "content": "x"}], "generate_til": True},
     )
     assert response.status_code == 400
-    assert response.json()["code"] == "invalid_input_type"
+    assert response.json()["error"] == "invalid_input_type"
 
 
 # generate_til 필드가 누락되면 400.
@@ -111,7 +111,7 @@ def test_llm_failure_returns_422() -> None:
         )
 
     assert response.status_code == 422
-    assert response.json()["code"] == "til_generation_failed"
+    assert response.json()["error"] == "til_generation_failed"
 
 
 # 임베딩 실패 시 422 embedding_failed.
@@ -133,4 +133,4 @@ def test_embedding_failure_returns_422() -> None:
         )
 
     assert response.status_code == 422
-    assert response.json()["code"] == "embedding_failed"
+    assert response.json()["error"] == "embedding_failed"
