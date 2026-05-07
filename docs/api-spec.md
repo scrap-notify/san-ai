@@ -104,7 +104,8 @@
 
 | 필드명 | 타입 | 설명 |
 | --- | --- | --- |
-| `til_markdown` | `string | null` | `generate_til=true`일 때만 반환. 카드별 단순 나열이 아닌 주제별로 구조화된 마크다운 문서. `false`이면 `null` |
+| `title` | `string \| null` | `generate_til=true`일 때만 반환. 생성된 TIL 문서의 제목. `false`이면 `null` |
+| `til_markdown` | `string \| null` | `generate_til=true`일 때만 반환. 카드별 단순 나열이 아닌 주제별로 구조화된 마크다운 문서. `false`이면 `null` |
 | `embedding` | `number[]` | 임베딩 벡터 결과값 |
 
 ### 요청/응답 예시
@@ -126,6 +127,7 @@
 
 ```json
 {
+  "title": "React 상태 관리와 클로저 정리",
   "til_markdown": "# TIL - 2025.04.24\n\n## React 상태 관리\n\nReact에서 상태는 컴포넌트가 기억해야 할 정보를 의미한다. ...\n\n## JavaScript 클로저\n\n클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다. ...",
   "embedding": [0.012, -0.453, 0.891, "..."]
 }
