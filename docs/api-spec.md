@@ -83,8 +83,9 @@
 
 ## 2. TIL 생성
 
-> 오늘 저장한 지식 카드 원문들을 GitHub 업로드용 마크다운 문서로 정리한다.
-리콜 TIL 페이지에서 활용한다.
+> 지식 카드 원문을 마크다운 문서로 정리한다.
+> - `contents` 1개: 단일 원문을 그대로 구조화해 반환 (카드 상세보기용)
+> - `contents` 2개 이상: 여러 원문을 주제별로 재구성해 반환 (TIL 생성용)
 > 
 
 **`POST /ai/til`**
@@ -95,7 +96,7 @@
 
 | 필드명 | 타입 | 필수 여부 | 설명 |
 | --- | --- | --- | --- |
-| `contents`  | `object[]` | ✅ 필수 | TIL 생성에 사용할 수집된 지식원문. `input_type`(`url`/`text`/`image`), `content`(텍스트 원문, 사이트 링크, S3 이미지 링크) 포함 |
+| `contents`  | `object[]` | ✅ 필수 | 마크다운 문서 생성에 사용할 지식 원문 목록. `input_type`(`url`/`text`/`image`), `content`(텍스트 원문, 사이트 링크, S3 이미지 링크) 포함. 1개이면 단일 원문 상세보기용, 2개 이상이면 TIL 생성용으로 동작 |
 | `generate_til` | `boolean` | ✅ 필수 | `true`이면 마크다운 TIL 문서를 생성해 반환. `false`이면 임베딩 벡터만 반환 |
 
 ---
@@ -105,7 +106,7 @@
 | 필드명 | 타입 | 설명 |
 | --- | --- | --- |
 | `title` | `string \| null` | `generate_til=true`일 때만 반환. 생성된 TIL 문서의 제목. `false`이면 `null` |
-| `til_markdown` | `string \| null` | `generate_til=true`일 때만 반환. 카드별 단순 나열이 아닌 주제별로 구조화된 마크다운 문서. `false`이면 `null` |
+| `til_markdown` | `string \| null` | `generate_til=true`일 때만 반환. `contents` 1개이면 원문 내용을 그대로 구조화한 마크다운, 2개 이상이면 주제별로 재구성한 마크다운. 원문에 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다. `false`이면 `null` |
 | `embedding` | `number[]` | 임베딩 벡터 결과값 |
 
 ### 요청/응답 예시

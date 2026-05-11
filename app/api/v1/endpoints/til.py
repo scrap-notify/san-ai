@@ -55,11 +55,15 @@ _ERROR_RESPONSES = {
 
 @router.post(
     "/til",
-    summary="TIL 생성",
+    summary="TIL 생성 / 카드 상세 문서화",
     description=(
-        "복수의 학습 카드 콘텐츠를 받아 TIL 마크다운과 임베딩을 반환합니다.\n\n"
-        "- `generate_til=true`: TIL 마크다운을 생성해 `til_markdown` 필드에 반환합니다.\n"
-        "- `generate_til=false`: 마크다운 생성 없이 임베딩만 반환합니다. `til_markdown`은 `null`입니다.\n\n"
+        "학습 카드 콘텐츠를 받아 마크다운 문서와 임베딩을 반환합니다.\n\n"
+        "**`contents` 개수에 따른 동작 차이**\n"
+        "- `contents` 1개: 원문 내용을 그대로 구조화한 마크다운 반환 (카드 상세보기용)\n"
+        "- `contents` 2개 이상: 여러 원문을 주제별로 재구성한 마크다운 반환 (TIL 생성용)\n\n"
+        "**`generate_til` 플래그**\n"
+        "- `true`: 마크다운 문서를 생성해 `til_markdown` 필드에 반환합니다.\n"
+        "- `false`: 마크다운 생성 없이 임베딩만 반환합니다. `til_markdown`은 `null`입니다.\n\n"
         "`embedding`은 카드별 개별 벡터가 아닌, 전체 contents를 통합한 벡터 1개입니다."
     ),
     response_model=TilResponse,
@@ -70,8 +74,17 @@ async def til(
         TilRequest,
         Body(
             openapi_examples={
-                "generate_til_true": {
-                    "summary": "TIL 생성 (마크다운 포함)",
+                "single_content": {
+                    "summary": "단일 콘텐츠 문서화 (카드 상세보기용)",
+                    "value": {
+                        "contents": [
+                            {"input_type": "url", "content": "https://fastapi.tiangolo.com/tutorial/first-steps/"},
+                        ],
+                        "generate_til": True,
+                    },
+                },
+                "multiple_contents": {
+                    "summary": "복수 콘텐츠 TIL 생성",
                     "value": {
                         "contents": [
                             {"input_type": "url", "content": "https://react.dev/learn/managing-state"},
