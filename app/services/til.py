@@ -2,7 +2,7 @@ import asyncio
 
 from app.core.exceptions import AIProcessingError, ContentValidationError
 from app.llms import EmbeddingClient, LLMClient
-from app.prompts import TIL_GENERATE_PROMPT
+from app.prompts import TIL_GENERATE_PROMPT, TIL_SINGLE_PROMPT
 from app.schemas.til import TilRequest, TilResponse
 from app.services.preprocessor import preprocess
 
@@ -25,7 +25,8 @@ async def generate_til(request: TilRequest) -> TilResponse:
     title: str | None = None
     til_markdown: str | None = None
     if request.generate_til:
-        prompt = f"{TIL_GENERATE_PROMPT}\n\n[입력 콘텐츠]\n{joined}"
+        base_prompt = TIL_SINGLE_PROMPT if len(request.contents) == 1 else TIL_GENERATE_PROMPT
+        prompt = f"{base_prompt}\n\n[입력 콘텐츠]\n{joined}"
         result = LLMClient().call_json(prompt=prompt, error_code="til_generation_failed")
         if not _REQUIRED_KEYS.issubset(result):
             missing = _REQUIRED_KEYS - result.keys()
