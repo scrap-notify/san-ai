@@ -1,7 +1,5 @@
 from enum import StrEnum
-
 from pydantic import BaseModel, ConfigDict, Field
-
 from app.schemas.til import TilContent
 
 
