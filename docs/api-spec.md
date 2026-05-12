@@ -7,6 +7,7 @@
 | HTTP 상태코드 | 설명 |
 | --- | --- |
 | `400` | 요청 값이 잘못된 경우 (필드 누락, 타입 오류 등) |
+| `404` | 요청한 외부 리소스가 존재하지 않는 경우 |
 | `422` | 입력값은 유효하나 AI 처리 실패한 경우 |
 | `500` | AI 서버 내부 오류 |
 
@@ -289,6 +290,88 @@
 
 ---
 
+## 5. GitHub Star 기반 cold-start 글 추천
+
+> GitHub 사용자의 Star 목록을 기반으로 신규 사용자가 스크랩할 만한 외부 글 URL을 추천한다.
+> 추천 결과는 `POST /ai/analyze` 요청 데이터에 바로 넣을 수 있는 형태로 반환한다.
+>
+
+**`POST /ai/recommend/github-stars`**
+
+---
+
+### 입력값 (Request Body)
+
+| 필드명 | 타입 | 필수 여부 | 설명 |
+| --- | --- | --- | --- |
+| `github_username` | `string` | ✅ 필수 | 추천에 사용할 GitHub 사용자명 |
+| `limit` | `integer` | 선택 | 추천 결과 최대 반환 개수. 생략 시 기본값 `5` |
+
+---
+
+### 출력값 (Response Body)
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `recommendations` | `object[]` | 추천 외부 글 URL 목록. 각 항목은 `POST /ai/analyze` 요청 Body로 그대로 사용할 수 있다. |
+
+#### `recommendations[]`
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `input_type` | `string` | 항상 `"url"` |
+| `content` | `string` | 추천 외부 글 URL |
+
+### 요청/응답 예시
+
+**Request**
+
+```json
+{
+  "github_username": "octocat",
+  "limit": 5
+}
+```
+
+**Response**
+
+```json
+{
+  "recommendations": [
+    {
+      "input_type": "url",
+      "content": "https://react.dev/learn/managing-state"
+    },
+    {
+      "input_type": "url",
+      "content": "https://docs.github.com/en/actions"
+    }
+  ]
+}
+```
+
+### 동작 방식
+
+- AI 서버가 GitHub API를 직접 호출해 사용자의 공개 Star 목록을 조회한다.
+- Star 목록의 저장소 이름, 설명, topics, 주요 언어 등을 기반으로 사용자의 관심사를 추론한다.
+- 추론한 관심사를 하나의 검색 질의로 압축해 Tavily 웹 검색 API를 1회 호출한다.
+- Tavily 검색 결과를 사용자 관심사와의 관련성 기준으로 정제해 추천 URL 목록을 반환한다.
+- Star가 하나도 없는 경우에는 사전에 정의된 기본 추천 URL 목록을 반환한다.
+- AI 서버는 SAN 서비스 DB 또는 Vector DB를 조회하지 않는다.
+
+### 에러 코드
+
+| 에러 코드 | 상태코드 | 설명 |
+| --- | --- | --- |
+| `missing_github_username` | `400` | `github_username` 필드가 비어있는 경우 |
+| `invalid_limit` | `400` | `limit` 값이 유효하지 않은 경우 |
+| `github_user_not_found` | `404` | GitHub 사용자를 찾을 수 없는 경우 |
+| `github_fetch_failed` | `422` | GitHub Star 목록 조회 실패 |
+| `search_failed` | `422` | Tavily 검색 처리 실패 |
+| `recommendation_failed` | `422` | 관심사 추론 또는 추천 결과 생성 실패 |
+
+---
+
 ## 설명
 
 **AI 서버에서는 DB, 벡터DB 모두 접근 안하기로 함**
@@ -329,3 +412,15 @@
     - `ox`: 콘텐츠 기반 참/거짓 판단 문장(문장·정오표시·해설)을 생성한다
     - 질문·정답·해설은 콘텐츠 언어에 관계없이 한국어로 생성된다. 단, 고유 명사·기술 용어는 원문 표기 유지
 - 용도: 학습한 내용을 퀴즈로 복습하는 기능에 사용한다
+
+### 5. GitHub Star 기반 cold-start 글 추천
+
+- 입력: GitHub 사용자명, 추천 결과 최대 개수
+- 출력: `POST /ai/analyze` 요청 Body로 바로 사용할 수 있는 URL 추천 목록
+- 동작:
+    - AI 서버가 GitHub API를 직접 호출해 공개 Star 목록을 수집한다
+    - Star 목록에서 관심 기술 스택과 주제를 추론한다
+    - 추론 결과를 하나의 Tavily 검색 질의로 압축해 외부 글 후보를 수집한다
+    - 검색 결과를 정제해 사용자가 스크랩할 만한 URL 목록을 반환한다
+    - Star가 하나도 없는 경우 기본 추천 URL 목록을 반환한다
+- 용도: 신규 사용자 또는 스크랩 이력이 부족한 사용자의 cold-start 추천
