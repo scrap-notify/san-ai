@@ -196,6 +196,99 @@
 
 ---
 
+## 4. 퀴즈 생성
+
+> 스크랩된 콘텐츠를 기반으로 퀴즈 문제를 생성한다.
+> - 콘텐츠 1개당 문제 1개가 자동으로 생성된다.
+> - 질문·정답·해설은 입력 콘텐츠의 언어(한국어/영어 등)를 그대로 따른다.
+> - 정답 비교 시 **대소문자 무시(case-insensitive) + 앞뒤 공백 trim** 처리를 권장한다.
+
+**`POST /ai/quiz`**
+
+---
+
+### 입력값 (Request Body)
+
+| 필드명 | 타입 | 필수 여부 | 설명 |
+| --- | --- | --- | --- |
+| `contents` | `object[]` | ✅ 필수 | 퀴즈를 생성할 콘텐츠 목록. `input_type`(`url`/`text`/`image`), `content`(텍스트 원문, 사이트 링크, S3 이미지 링크) 포함. 1개 이상 필요 |
+| `quiz_type` | `string` | ✅ 필수 | 퀴즈 유형. `"short_answer"`: 단답형 / `"ox"`: O/X 퀴즈 (추후 지원) |
+
+---
+
+### 출력값 (Response Body)
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `quiz_type` | `string` | 생성된 퀴즈 유형 (`"short_answer"` / `"ox"`) |
+| `questions` | `object[]` | 생성된 문제 목록. `quiz_type`에 따라 항목 구조가 다름 (아래 참고) |
+
+#### `questions` 항목 구조 — `short_answer`
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `question` | `string` | 질문 |
+| `answer` | `string` | 정답 (고유 용어 또는 단어 하나) |
+| `explanation` | `string \| null` | 해설 한 문장. 없으면 `null` |
+
+#### `questions` 항목 구조 — `ox` (추후 지원)
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `statement` | `string` | O/X 판단할 문장 |
+| `is_correct` | `boolean` | `true` = O, `false` = X |
+| `explanation` | `string \| null` | 해설 한 문장. 없으면 `null` |
+
+### 요청/응답 예시
+
+**Request**
+
+```json
+{
+  "contents": [
+    { "input_type": "url", "content": "https://docs.python.org/3/tutorial/classes.html" },
+    { "input_type": "url", "content": "https://martinfowler.com/articles/injection.html" },
+    { "input_type": "text", "content": "Docker는 애플리케이션을 컨테이너로 패키징해 어디서든 동일하게 실행할 수 있게 해주는 플랫폼이다." }
+  ],
+  "quiz_type": "short_answer"
+}
+```
+
+**Response**
+
+```json
+{
+  "quiz_type": "short_answer",
+  "questions": [
+    {
+      "question": "Python에서 클래스의 인스턴스를 생성할 때 자동으로 호출되는 초기화 메서드는?",
+      "answer": "__init__",
+      "explanation": "__init__ 메서드는 인스턴스가 생성될 때 자동 호출되어 초기 상태를 설정한다."
+    },
+    {
+      "question": "Martin Fowler가 제안한, 객체가 직접 의존성을 생성하지 않고 외부에서 주입받는 패턴은?",
+      "answer": "Dependency Injection",
+      "explanation": "의존성 주입은 객체 간 결합도를 낮추고 테스트 용이성을 높이기 위해 외부에서 의존성을 전달하는 패턴이다."
+    },
+    {
+      "question": "Docker에서 애플리케이션과 실행 환경을 묶어 격리된 단위로 실행하는 것을 무엇이라 하는가?",
+      "answer": "컨테이너",
+      "explanation": "컨테이너는 애플리케이션과 그 의존성을 하나의 실행 단위로 묶어 환경에 관계없이 동일하게 동작하게 한다."
+    }
+  ]
+}
+```
+
+### 에러 코드
+
+| 에러 코드 | 상태코드 | 설명 |
+| --- | --- | --- |
+| `missing_contents` | `400` | `contents` 배열이 비어있는 경우 |
+| `invalid_input_type` | `400` | `contents` 내 `input_type`이 유효하지 않은 값인 경우 |
+| `quiz_generation_failed` | `422` | AI 퀴즈 생성 실패 또는 LLM 응답 필수 필드 누락 |
+
+---
+
 ## 설명
 
 **AI 서버에서는 DB, 벡터DB 모두 접근 안하기로 함**

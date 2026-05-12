@@ -26,6 +26,10 @@ def create_app() -> FastAPI:
             "description": "사용자의 자연어 질의를 임베딩 벡터로 변환한다. 벡터 DB 조회는 백엔드가 담당한다.",
         },
         {
+            "name": "quiz",
+            "description": "스크랩된 콘텐츠를 기반으로 단답형·O/X 퀴즈를 생성한다.",
+        },
+        {
             "name": "health",
             "description": "서버 상태 확인",
         },
@@ -33,7 +37,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="SAN AI Server",
-        description="학습 카드 콘텐츠를 분석·요약·검색하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/search` 세 엔드포인트를 사용한다.",
+        description="학습 카드 콘텐츠를 분석·요약·검색·퀴즈 생성하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/search`, `/ai/quiz` 엔드포인트를 사용한다.",
         version="1.0.0",
         openapi_tags=tags_metadata,
     )
