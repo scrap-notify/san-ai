@@ -22,6 +22,18 @@ skip_if_no_image_url = pytest.mark.skipif(
 )
 
 
+def _mock_image_stream(mock_client: AsyncMock) -> MagicMock:
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+
+    mock_stream = MagicMock()
+    mock_stream.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_stream.__aexit__ = AsyncMock(return_value=None)
+    mock_client.stream = MagicMock(return_value=mock_stream)
+
+    return mock_response
+
+
 # ── text ──────────────────────────────────────────────────────────────────────
 # content가 비어있거나 공백만 있는 경우 400 상태 코드와 "missing_content" 오류 코드를 반환하는지 검증.
 def test_text_empty_raises_missing_content() -> None:
@@ -127,7 +139,7 @@ def test_image_access_failure_raises_image_access_failed() -> None:
     with patch("app.services.preprocessor.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client_cls.return_value.__aenter__.return_value = mock_client
-        mock_client.head.side_effect = Exception("403 Forbidden")
+        mock_client.stream = MagicMock(side_effect=Exception("403 Forbidden"))
 
         with pytest.raises(AIProcessingError) as exc:
             asyncio.run(preprocess(InputType.image, "https://s3.amazonaws.com/bucket/image.png"))
@@ -135,13 +147,10 @@ def test_image_access_failure_raises_image_access_failed() -> None:
 
 # 이미지 분석 실패
 def test_image_analysis_failure_raises_image_analysis_failed() -> None:
-    mock_head = MagicMock()
-    mock_head.raise_for_status = MagicMock()
-
     with patch("app.services.preprocessor.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client_cls.return_value.__aenter__.return_value = mock_client
-        mock_client.head.return_value = mock_head
+        _mock_image_stream(mock_client)
 
         with patch("app.services.preprocessor.LLMClient") as mock_llm_cls:
             mock_llm = MagicMock()
@@ -156,13 +165,10 @@ def test_image_analysis_failure_raises_image_analysis_failed() -> None:
 
 # 이미지 분석 성공
 def test_image_success_returns_description() -> None:
-    mock_head = MagicMock()
-    mock_head.raise_for_status = MagicMock()
-
     with patch("app.services.preprocessor.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client_cls.return_value.__aenter__.return_value = mock_client
-        mock_client.head.return_value = mock_head
+        _mock_image_stream(mock_client)
 
         with patch("app.services.preprocessor.LLMClient") as mock_llm_cls:
             mock_llm = MagicMock()
@@ -172,6 +178,11 @@ def test_image_success_returns_description() -> None:
             result = asyncio.run(preprocess(InputType.image, "https://s3.amazonaws.com/bucket/image.png"))
 
     assert result == "이미지에는 파이썬 코드가 포함되어 있습니다."
+    mock_client.stream.assert_called_once_with(
+        "GET",
+        "https://s3.amazonaws.com/bucket/image.png",
+        follow_redirects=True,
+    )
 
 
 # ── 통합 테스트 (실제 네트워크 + 실제 본문 추출) ──────────────────────────────────
