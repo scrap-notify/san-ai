@@ -192,7 +192,7 @@ def test_image_access_failure_returns_422() -> None:
     with patch("app.services.preprocessor.httpx.AsyncClient") as mock_client_cls:
         mock_client = AsyncMock()
         mock_client_cls.return_value.__aenter__.return_value = mock_client
-        mock_client.head.side_effect = Exception("403 Forbidden")
+        mock_client.stream = MagicMock(side_effect=Exception("403 Forbidden"))
 
         response = client.post(
             "/ai/analyze",

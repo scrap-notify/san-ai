@@ -54,14 +54,14 @@ async def _preprocess_url(content: str) -> str:
 
     return body
 
-# 이미지 콘텐츠는 유효한 URL인지 검증한 후 HTTP HEAD 요청으로 접근 가능 여부를 확인. 이후 LLMClient의 call_with_image 메서드를 사용하여 이미지 설명 텍스트를 생성. 실패 시 AIProcessingError를 발생.
+# 이미지 콘텐츠는 유효한 URL인지 검증한 후 HTTP GET stream으로 접근 가능 여부를 확인. 이후 LLMClient의 call_with_image 메서드를 사용하여 이미지 설명 텍스트를 생성. 실패 시 AIProcessingError를 발생.
 async def _preprocess_image(content: str) -> str:
     _validate_url(content)
 
     try:
         async with httpx.AsyncClient(timeout=10.0, headers=_HEADERS) as client:
-            head = await client.head(content, follow_redirects=True)
-            head.raise_for_status()
+            async with client.stream("GET", content, follow_redirects=True) as response:
+                response.raise_for_status()
     except ContentValidationError:
         raise
     except Exception as e:
