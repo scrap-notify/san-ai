@@ -37,13 +37,16 @@ _BLOCKED_RESULT_DOMAINS = {
     "codingblocks.com",
     "codesignal.com",
     "coursera.org",
+    "facebook.com",
     "flatironschool.com",
     "linkedin.com",
     "medium.com",
     "reddit.com",
+    "scaler.com",
     "scribd.com",
     "stackademic.com",
     "udemy.com",
+    "wikipedia.org",
 }
 _PREFERRED_RESULT_DOMAINS = {
     "aws.amazon.com",
@@ -98,6 +101,15 @@ _PREFERRED_RESULT_TERMS = {
     "engineering blog",
     "performance",
     "reference",
+}
+_BLOCKED_FILE_EXTENSIONS = {
+    ".doc",
+    ".docx",
+    ".epub",
+    ".pdf",
+    ".ppt",
+    ".pptx",
+    ".zip",
 }
 logger = logging.getLogger(__name__)
 
@@ -272,6 +284,10 @@ def _is_recommendable_result(item: dict) -> bool:
         return False
 
     parsed = urlparse(str(url))
+    if _has_blocked_file_extension(parsed.path):
+        logger.debug("filtered recommendation file: %s", url)
+        return False
+
     if parsed.hostname and _is_blocked_domain(parsed.hostname):
         logger.debug("filtered recommendation domain: %s", url)
         return False
@@ -285,6 +301,10 @@ def _is_recommendable_result(item: dict) -> bool:
         return False
 
     return True
+
+
+def _has_blocked_file_extension(path: str) -> bool:
+    return any(path.lower().endswith(extension) for extension in _BLOCKED_FILE_EXTENSIONS)
 
 
 def _contains_blocked_term(text: str) -> bool:

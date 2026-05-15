@@ -250,6 +250,26 @@ def test_low_quality_tavily_results_are_filtered() -> None:
             "url": "https://www.reddit.com/r/ExperiencedDevs/comments/1jgod64/example/",
             "title": "Experienced devs discussion",
         },
+        {
+            "url": "https://www2.nsru.ac.th/tung/java_doc/Core%20Java%20Volume%20I.pdf",
+            "title": "Core Java Volume I PDF",
+        },
+        {
+            "url": "https://www.sietk.org/downloads/javabook.pdf",
+            "title": "Java book PDF",
+        },
+        {
+            "url": "https://en.wikipedia.org/wiki/Java_(programming_language)",
+            "title": "Java programming language",
+        },
+        {
+            "url": "https://www.facebook.com/61571591542566/posts/software-architect-knowledge-map/",
+            "title": "Software architect knowledge map",
+        },
+        {
+            "url": "https://www.scaler.com/topics/software-engineering/java-back-end-developer/",
+            "title": "Java back end developer",
+        },
     ]
     allowed_result = {
         "url": "https://docs.spring.io/spring-framework/reference/web.html",
@@ -257,6 +277,11 @@ def test_low_quality_tavily_results_are_filtered() -> None:
     }
 
     assert [_is_recommendable_result(item) for item in [*blocked_results, allowed_result]] == [
+        False,
+        False,
+        False,
+        False,
+        False,
         False,
         False,
         False,
