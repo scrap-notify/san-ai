@@ -6,9 +6,21 @@ from app.prompts.quiz import get_quiz_prompt
 from app.schemas.quiz import OXQuestion, QuizRequest, QuizResponse, QuizType, ShortAnswerQuestion
 from app.services.preprocessor import preprocess
 
-_BLOCK_SEPARATOR = "\n\n---\n\n"
 _SHORT_ANSWER_REQUIRED_KEYS = {"question", "answer"}
 _OX_REQUIRED_KEYS = {"statement", "is_correct"}
+
+
+async def _call_single(client: LLMClient, quiz_type: QuizType, content: str) -> dict:
+    prompt = get_quiz_prompt(quiz_type, content, 1)
+    result = await client.acall_json(prompt=prompt, error_code="quiz_generation_failed")
+    raw_questions = result.get("questions")
+    if not isinstance(raw_questions, list) or len(raw_questions) != 1:
+        actual = len(raw_questions) if isinstance(raw_questions, list) else "없음"
+        raise AIProcessingError(
+            code="quiz_generation_failed",
+            message=f"LLM 응답의 questions 배열이 올바르지 않습니다. 기대: 1개, 실제: {actual}",
+        )
+    return raw_questions[0]
 
 
 async def generate_quiz(request: QuizRequest) -> QuizResponse:
@@ -18,23 +30,15 @@ async def generate_quiz(request: QuizRequest) -> QuizResponse:
     preprocessed = await asyncio.gather(
         *(preprocess(item.input_type, item.content) for item in request.contents)
     )
-    num_questions = len(request.contents)
-    joined = _BLOCK_SEPARATOR.join(preprocessed)
 
-    prompt = get_quiz_prompt(request.quiz_type, joined, num_questions)
-    result = LLMClient().call_json(prompt=prompt, error_code="quiz_generation_failed")
-
-    raw_questions = result.get("questions")
-    if not isinstance(raw_questions, list) or len(raw_questions) != num_questions:
-        actual = len(raw_questions) if isinstance(raw_questions, list) else "없음"
-        raise AIProcessingError(
-            code="quiz_generation_failed",
-            message=f"LLM 응답의 questions 배열이 올바르지 않습니다. 기대: {num_questions}개, 실제: {actual}",
-        )
+    client = LLMClient()
+    raw_items = await asyncio.gather(
+        *(_call_single(client, request.quiz_type, content) for content in preprocessed)
+    )
 
     questions: list[ShortAnswerQuestion | OXQuestion] = []
     if request.quiz_type == QuizType.short_answer:
-        for item in raw_questions:
+        for item in raw_items:
             if not _SHORT_ANSWER_REQUIRED_KEYS.issubset(item):
                 missing = _SHORT_ANSWER_REQUIRED_KEYS - item.keys()
                 raise AIProcessingError(
@@ -47,7 +51,7 @@ async def generate_quiz(request: QuizRequest) -> QuizResponse:
                 explanation=item.get("explanation"),
             ))
     elif request.quiz_type == QuizType.ox:
-        for item in raw_questions:
+        for item in raw_items:
             if not _OX_REQUIRED_KEYS.issubset(item):
                 missing = _OX_REQUIRED_KEYS - item.keys()
                 raise AIProcessingError(
