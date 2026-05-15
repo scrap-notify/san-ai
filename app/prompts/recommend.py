@@ -2,7 +2,7 @@ GITHUB_STARS_SEARCH_QUERY_PROMPT = """
 너는 GitHub Star 목록을 보고 사용자의 개발 관심사를 추론한 뒤, 웹 검색 API에 넣을 검색 질의를 만드는 추천 시스템이다.
 
 목표:
-- 신규 사용자가 스크랩해둘 만한 고품질 기술 글, 튜토리얼, 가이드 URL을 찾기 위한 Tavily 검색 질의 1개를 만든다.
+- 신규 사용자가 스크랩해둘 만한 권위 있고 실무적인 기술 글, 공식 문서, 엔지니어링 블로그 URL을 찾기 위한 Tavily 검색 질의 1개를 만든다.
 
 질의 작성 기준:
 - 반드시 영어로 작성한다.
@@ -12,8 +12,9 @@ GITHUB_STARS_SEARCH_QUERY_PROMPT = """
 - "best technical article tutorial" 같은 일반적인 고정 문구를 그대로 붙이지 않는다.
 - 너무 넓은 질의보다 실제 글 검색에 유리한 구체적인 질의를 만든다.
 - 공식 문서, 엔지니어링 블로그, 아키텍처 가이드, 실무 best practice 글이 검색되도록 작성한다.
-- 면접 준비, 코딩 테스트, 문제 풀이, 자격증, 치트시트, 책/강의 판매 페이지를 찾는 질의로 만들지 않는다.
-- `interview`, `coding test`, `leetcode`, `cheatsheet`, `questions`, `prep`, `book`, `course` 같은 단어는 사용하지 않는다.
+- 초보자 로드맵, 커리어 전환 글, 면접 준비, 코딩 테스트, 문제 풀이, 자격증, 치트시트, 책/강의 판매 페이지를 찾는 질의로 만들지 않는다.
+- `interview`, `coding test`, `leetcode`, `cheatsheet`, `questions`, `prep`, `book`, `course`, `roadmap`, `beginner`, `complete guide`, `become developer` 같은 단어는 사용하지 않는다.
+- 특정 블로그 플랫폼보다 주제의 깊이를 우선한다. `official documentation`, `engineering blog`, `architecture`, `best practices`, `reference` 같은 의도를 자연스럽게 반영한다.
 - URL, 설명 문장, Markdown, 코드 블록은 출력하지 않는다.
 
 출력 형식:

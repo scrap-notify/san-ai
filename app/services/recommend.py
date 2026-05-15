@@ -34,22 +34,31 @@ _BLOCKED_RESULT_DOMAINS = {
     "codingblocks.com",
     "codesignal.com",
     "coursera.org",
+    "linkedin.com",
+    "medium.com",
     "scribd.com",
+    "stackademic.com",
     "udemy.com",
 }
 _BLOCKED_RESULT_TERMS = {
+    "beginner",
     "book",
+    "bootcamp",
     "certification",
     "cheat sheet",
     "cheatsheet",
     "coding interview",
     "coding test",
+    "complete guide",
     "course",
     "exam",
+    "for beginners",
     "interview",
     "leetcode",
     "prep",
     "questions",
+    "roadmap",
+    "zero to hero",
 }
 logger = logging.getLogger(__name__)
 
@@ -173,6 +182,7 @@ async def _search_tavily(query: str, limit: int) -> list[str]:
         "max_results": min(limit * 2, 20),
         "include_answer": False,
         "include_raw_content": False,
+        "exclude_domains": sorted(_BLOCKED_RESULT_DOMAINS),
     }
 
     try:

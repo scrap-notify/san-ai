@@ -213,6 +213,22 @@ def test_low_quality_tavily_results_are_filtered() -> None:
             "url": "https://www.techinterviewhandbook.org/algorithms/study-cheatsheet/",
             "title": "Algorithms study cheatsheet",
         },
+        {
+            "url": "https://medium.com/@author/java-backend-development-roadmap",
+            "title": "Java backend development roadmap",
+        },
+        {
+            "url": "https://blog.stackademic.com/java-backend-roadmap",
+            "title": "Java backend roadmap",
+        },
+        {
+            "url": "https://www.linkedin.com/posts/user_must-know-backend-engineering-topics",
+            "title": "Must know backend engineering topics",
+        },
+        {
+            "url": "https://example.com/java-backend-complete-guide",
+            "title": "Java backend complete guide for beginners",
+        },
     ]
     allowed_result = {
         "url": "https://docs.spring.io/spring-framework/reference/web.html",
@@ -220,6 +236,10 @@ def test_low_quality_tavily_results_are_filtered() -> None:
     }
 
     assert [_is_recommendable_result(item) for item in [*blocked_results, allowed_result]] == [
+        False,
+        False,
+        False,
+        False,
         False,
         False,
         False,
