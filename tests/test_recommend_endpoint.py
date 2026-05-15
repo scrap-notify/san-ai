@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import get_settings
 from app.core.exceptions import AIProcessingError, ResourceNotFoundError
 from app.main import app
 from app.services.recommend import (
@@ -353,9 +354,13 @@ async def test_tavily_search_requests_wider_candidate_pool(monkeypatch) -> None:
             return FakeResponse()
 
     monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    get_settings.cache_clear()
     monkeypatch.setattr("app.services.recommend.httpx.AsyncClient", FakeAsyncClient)
 
-    urls = await _search_tavily("spring backend architecture best practices", limit=5)
+    try:
+        urls = await _search_tavily("spring backend architecture best practices", limit=5)
+    finally:
+        get_settings.cache_clear()
 
     assert urls == ["https://docs.spring.io/spring-framework/reference/web.html"]
     assert captured_payload["max_results"] == 20
