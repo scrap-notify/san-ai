@@ -28,6 +28,21 @@ class LLMClient:
         except json.JSONDecodeError as e:
             raise AIProcessingError(code=error_code, message=f"LLM 응답 JSON 파싱 실패: {e}") from e
 
+    async def acall(self, prompt: str, error_code: str) -> str:
+        try:
+            response = await self._model.ainvoke(prompt)
+            return response.content
+        except Exception as e:
+            raise AIProcessingError(code=error_code, message=str(e)) from e
+
+    async def acall_json(self, prompt: str, error_code: str) -> dict:
+        raw = await self.acall(prompt, error_code)
+        cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            raise AIProcessingError(code=error_code, message=f"LLM 응답 JSON 파싱 실패: {e}") from e
+
     # prompt과 이미지 URL을 입력받아 LLM에서 텍스트 응답을 반환하는 메서드입니다. 예외 발생 시 AIProcessingError로 래핑하여 전달합니다.
     def call_with_image(self, prompt: str, image_url: str, error_code: str) -> str:
         try:
