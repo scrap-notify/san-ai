@@ -28,6 +28,7 @@ _DEFAULT_RECOMMENDATION_URLS = [
 ]
 
 _MAX_LIMIT = 10
+_MAX_TAVILY_RESULTS = 20
 _STAR_FETCH_LIMIT = 30
 _QUERY_REPOSITORY_LIMIT = 20
 _BLOCKED_RESULT_DOMAINS = {
@@ -217,7 +218,7 @@ async def _search_tavily(query: str, limit: int) -> list[str]:
         "api_key": settings.tavily_api_key,
         "query": query,
         "search_depth": "basic",
-        "max_results": min(limit * 2, 20),
+        "max_results": min(limit * 4, _MAX_TAVILY_RESULTS),
         "include_answer": False,
         "include_raw_content": False,
         "exclude_domains": sorted(_BLOCKED_RESULT_DOMAINS),

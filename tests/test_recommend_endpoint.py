@@ -1,10 +1,15 @@
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.exceptions import AIProcessingError, ResourceNotFoundError
 from app.main import app
-from app.services.recommend import _is_recommendable_result, _rank_recommendation_results
+from app.services.recommend import (
+    _is_recommendable_result,
+    _rank_recommendation_results,
+    _search_tavily,
+)
 
 client = TestClient(app)
 
@@ -289,3 +294,44 @@ def test_recommendation_results_prioritize_authoritative_sources() -> None:
         "https://martinfowler.com/articles/microservices.html",
         "https://example.com/backend-patterns",
     ]
+
+
+@pytest.mark.asyncio
+async def test_tavily_search_requests_wider_candidate_pool(monkeypatch) -> None:
+    captured_payload = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self) -> dict:
+            return {
+                "results": [
+                    {
+                        "url": "https://docs.spring.io/spring-framework/reference/web.html",
+                        "title": "Spring Framework Web Documentation",
+                    }
+                ]
+            }
+
+    class FakeAsyncClient:
+        def __init__(self, timeout: float):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        async def post(self, url: str, json: dict):
+            captured_payload.update(json)
+            return FakeResponse()
+
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setattr("app.services.recommend.httpx.AsyncClient", FakeAsyncClient)
+
+    urls = await _search_tavily("spring backend architecture best practices", limit=5)
+
+    assert urls == ["https://docs.spring.io/spring-framework/reference/web.html"]
+    assert captured_payload["max_results"] == 20
+    assert "reddit.com" in captured_payload["exclude_domains"]
