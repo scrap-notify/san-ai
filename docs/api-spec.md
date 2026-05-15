@@ -84,10 +84,9 @@
 
 ## 2. TIL 생성
 
-> 지식 카드 원문을 마크다운 문서로 정리한다.
-> - `contents` 1개: 단일 원문을 그대로 구조화해 반환 (카드 상세보기용)
-> - `contents` 2개 이상: 여러 원문을 주제별로 재구성해 반환 (TIL 생성용)
-> 
+> 오늘 수집한 여러 카드 원문을 학습자 관점으로 요약/정리해 TIL 마크다운 문서를 생성한다.
+> 카드별 개별 요약(병렬) → 주제별 통합 TIL 생성의 2단계 Map-Reduce 구조로 동작한다.
+> 단일 카드 원문 구조화는 `/ai/card` 엔드포인트를 사용한다.
 
 **`POST /ai/til`**
 
@@ -97,8 +96,8 @@
 
 | 필드명 | 타입 | 필수 여부 | 설명 |
 | --- | --- | --- | --- |
-| `contents`  | `object[]` | ✅ 필수 | 마크다운 문서 생성에 사용할 지식 원문 목록. `input_type`(`url`/`text`/`image`), `content`(텍스트 원문, 사이트 링크, S3 이미지 링크) 포함. 1개이면 단일 원문 상세보기용, 2개 이상이면 TIL 생성용으로 동작 |
-| `generate_til` | `boolean` | ✅ 필수 | `true`이면 마크다운 TIL 문서를 생성해 반환. `false`이면 임베딩 벡터만 반환 |
+| `contents` | `object[]` | ✅ 필수 | TIL을 구성할 카드 목록. 1개 이상 필요. 각 항목은 `input_type`(`url`/`text`/`image`)과 `content`(URL 문자열, 텍스트 원문, S3 이미지 링크) 포함 |
+| `generate_til` | `boolean` | ✅ 필수 | `true`이면 TIL 마크다운 문서를 생성해 반환. `false`이면 임베딩 벡터만 반환 |
 
 ---
 
@@ -106,9 +105,9 @@
 
 | 필드명 | 타입 | 설명 |
 | --- | --- | --- |
-| `title` | `string \| null` | `generate_til=true`일 때만 반환. 생성된 TIL 문서의 제목. `false`이면 `null` |
-| `til_markdown` | `string \| null` | `generate_til=true`일 때만 반환. `contents` 1개이면 원문 내용을 그대로 구조화한 마크다운, 2개 이상이면 주제별로 재구성한 마크다운. 원문에 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다. `false`이면 `null` |
-| `embedding` | `number[]` | 임베딩 벡터 결과값 |
+| `title` | `string \| null` | `generate_til=true`일 때만 반환. 오늘 다룬 주제들을 대표하는 한 줄 제목. `false`이면 `null` |
+| `til_markdown` | `string \| null` | `generate_til=true`일 때만 반환. 카드 내용을 학습자 관점으로 요약·주제별로 구조화한 마크다운 문서. 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다. `false`이면 `null` |
+| `embedding` | `number[]` | 전체 contents를 통합한 임베딩 벡터 1개 (카드별 개별 벡터 아님) |
 
 ### 요청/응답 예시
 
@@ -117,9 +116,9 @@
 ```json
 {
   "contents": [
-    { "input_type": "url", "content": "https://react.dev/learn/managing-state" },
+    { "input_type": "url", "content": "https://fastapi.tiangolo.com/async/" },
     { "input_type": "text", "content": "클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다." },
-    { "input_type": "image", "content": "https://s3.amazonaws.com/bucket/capture.png" }
+    { "input_type": "url", "content": "https://docs.python.org/3/tutorial/classes.html" }
   ],
   "generate_til": true
 }
@@ -129,8 +128,8 @@
 
 ```json
 {
-  "title": "React 상태 관리와 클로저 정리",
-  "til_markdown": "# TIL - 2025.04.24\n\n## React 상태 관리\n\nReact에서 상태는 컴포넌트가 기억해야 할 정보를 의미한다. ...\n\n## JavaScript 클로저\n\n클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다. ...",
+  "title": "FastAPI 비동기 처리와 Python 핵심 개념",
+  "til_markdown": "# TIL\n\n## FastAPI 비동기 처리\n\nFastAPI는 async/await를 기반으로 비동기 요청을 처리한다. ...\n\n## Python 클로저와 클래스\n\n클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다. ...",
   "embedding": [0.012, -0.453, 0.891, "..."]
 }
 ```
@@ -146,7 +145,66 @@
 
 ---
 
-## 3. 자연어 카드 검색
+## 3. 카드 상세 문서화
+
+> 단일 카드 원문을 요약 없이 그대로 구조화해 마크다운 문서로 반환한다.
+> 원문 흐름을 유지하며 구조화하는 카드 상세보기 전용 엔드포인트.
+
+**`POST /ai/card`**
+
+---
+
+### 입력값 (Request Body)
+
+| 필드명 | 타입 | 필수 여부 | 설명 |
+| --- | --- | --- | --- |
+| `content` | `object` | ✅ 필수 | 단일 카드 콘텐츠. `input_type`(`url`/`text`/`image`)과 `content`(URL 문자열, 텍스트 원문, S3 이미지 링크) 포함 |
+
+---
+
+### 출력값 (Response Body)
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `title` | `string` | 원문 내용을 대표하는 한 줄 제목 |
+| `card_markdown` | `string` | 원문을 구조화한 마크다운 문서. 요약 없이 원문 흐름 그대로 유지. 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다 |
+| `embedding` | `number[]` | 카드 콘텐츠 임베딩 벡터 |
+
+### 요청/응답 예시
+
+**Request**
+
+```json
+{
+  "content": {
+    "input_type": "url",
+    "content": "https://fastapi.tiangolo.com/tutorial/first-steps/"
+  }
+}
+```
+
+**Response**
+
+```json
+{
+  "title": "FastAPI 첫 번째 단계",
+  "card_markdown": "## FastAPI 소개\n\nFastAPI는 Python 3.8+를 기반으로 한 현대적인 고성능 웹 프레임워크다. ...\n\n## 첫 번째 API 만들기\n\n```python\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n```",
+  "embedding": [0.012, -0.453, 0.891, "..."]
+}
+```
+
+### 에러 코드
+
+| 에러 코드 | 상태코드 | 설명 |
+| --- | --- | --- |
+| `missing_content` | `400` | `content` 필드가 비어있는 경우 |
+| `invalid_input_type` | `400` | `input_type`이 `url` / `text` / `image` 외의 값인 경우 |
+| `card_detail_failed` | `422` | 카드 마크다운 문서 생성 실패 |
+| `embedding_failed` | `422` | 임베딩 벡터 생성 실패 |
+
+---
+
+## 4. 자연어 카드 검색
 
 > 사용자의 자연어 질의를 임베딩 벡터로 변환한다.
 백엔드가 이 벡터로 벡터 DB를 조회해 유사 카드를 검색·후보 조회·재정렬 후 결과를 반환한다.
@@ -197,7 +255,7 @@
 
 ---
 
-## 4. 퀴즈 생성
+## 5. 퀴즈 생성
 
 > 스크랩된 콘텐츠를 기반으로 퀴즈 문제를 생성한다.
 > - 콘텐츠 1개당 문제 1개가 자동으로 생성된다.
@@ -389,21 +447,30 @@
 
 ### 2. TIL 생성
 
-- 입력: 지식 카드 원문들, 요약 (T/F)
-- 출력: markdown 형식 TIL 문서(T인 경우만), 원문 기반 임베딩 벡터 결과값
+- 입력: 지식 카드 원문 목록, `generate_til` (T/F)
+- 출력: markdown 형식 TIL 문서(`generate_til=true`인 경우만), 전체 contents 통합 임베딩 벡터
 - 동작:
-    - AI 서버가 입력값을 바탕으로 TIL 문서를 md 형식으로 생성
-    - AI 서버가 입력값을 바탕으로 임베딩하고 결과값을 생성한다
+    - 카드별 개별 요약(병렬) → 주제별 통합 TIL 생성의 2단계 Map-Reduce로 동작
+    - `generate_til=false`이면 임베딩만 반환
 - 용도: 리콜 TIL 페이지
 
-### 3. 자연어 카드 검색
+### 3. 카드 상세 문서화
+
+- 입력: 단일 카드 콘텐츠
+- 출력: 원문을 구조화한 마크다운 문서, 임베딩 벡터
+- 동작:
+    - 단일 카드 원문을 요약 없이 그대로 구조화
+    - 코드가 있으면 언어 식별자 있는 코드 펜스로 감쌈
+- 용도: 카드 상세보기 페이지
+
+### 4. 자연어 카드 검색
 
 - 입력: 사용자의 자연어 질문
 - 출력: 임베딩 벡터 결과값
 - 동작: AI 서버가 자연어 질의를 임베딩하고 결과값을 생성한다
 - 용도: 검색창에서 저장된 지식카드를 탐색하는 데 사용한다.
 
-### 4. 퀴즈 생성
+### 5. 퀴즈 생성
 
 - 입력: 스크랩된 콘텐츠 목록(`url`/`text`/`image`), 퀴즈 유형(`short_answer` / `ox`)
 - 출력: 퀴즈 유형 + 문제 목록

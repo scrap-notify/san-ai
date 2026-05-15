@@ -14,6 +14,8 @@ class TilContent(BaseModel):
     )
 
 
+
+
 class TilRequest(BaseModel):
     contents: list[TilContent] = Field(
         description="TIL을 구성할 카드 목록. 1개 이상 필요",

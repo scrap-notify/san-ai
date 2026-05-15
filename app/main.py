@@ -19,7 +19,11 @@ def create_app() -> FastAPI:
         },
         {
             "name": "til",
-            "description": "오늘 저장한 지식 카드 원문들을 GitHub 업로드용 마크다운 문서로 정리한다. 리콜 TIL 페이지에서 활용한다.",
+            "description": "오늘 저장한 여러 지식 카드를 카드별 요약 후 주제별로 묶어 TIL 마크다운 문서로 정리한다. 리콜 TIL 페이지에서 활용한다.",
+        },
+        {
+            "name": "card",
+            "description": "단일 지식 카드 원문을 그대로 구조화한 마크다운 문서와 임베딩을 반환한다. 카드 상세보기에서 활용한다.",
         },
         {
             "name": "search",
@@ -41,7 +45,8 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="SAN AI Server",
-        description="학습 카드 콘텐츠를 분석·요약·검색·퀴즈 생성·추천하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/search`, `/ai/quiz`, `/ai/recommend/github-stars` 엔드포인트를 사용한다.",
+
+        description="학습 카드 콘텐츠를 분석·요약·검색·퀴즈 생성·추천하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/card`, `/ai/search`, `/ai/quiz`, `/ai/recommend/github-stars` 엔드포인트를 사용한다.",
         version="1.0.0",
         openapi_tags=tags_metadata,
     )

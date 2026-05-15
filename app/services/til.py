@@ -2,43 +2,72 @@ import asyncio
 
 from app.core.exceptions import AIProcessingError, ContentValidationError
 from app.llms import EmbeddingClient, LLMClient
-from app.prompts import TIL_GENERATE_PROMPT, TIL_SINGLE_PROMPT
+from app.prompts import TIL_GROUP_PROMPT, TIL_SUMMARY_PROMPT
 from app.schemas.til import TilRequest, TilResponse
 from app.services.preprocessor import preprocess
 
-# 전처리된 콘텐츠 블록을 LLM 입력용 텍스트로 합칠 때 사이에 넣는 구분자.
 _BLOCK_SEPARATOR = "\n\n---\n\n"
-
+_BATCH_SIZE = 3
 _REQUIRED_KEYS = {"title", "til_markdown"}
 
 
-# /ai/til 엔드포인트의 핵심 로직. 입력 콘텐츠들을 전처리한 뒤, 옵션에 따라 TIL 마크다운 문서와 임베딩 벡터를 생성한다.
+async def _summarize(llm: LLMClient, preprocessed: str) -> str:
+    return await llm.acall(
+        prompt=f"{TIL_SUMMARY_PROMPT}\n\n[입력 콘텐츠]\n{preprocessed}",
+        error_code="til_summarize_failed",
+    )
+
+
+async def _reduce(llm: LLMClient, texts: list[str]) -> dict:
+    joined = _BLOCK_SEPARATOR.join(texts)
+    result = await llm.acall_json(
+        prompt=f"{TIL_GROUP_PROMPT}\n\n[요약 콘텐츠]\n{joined}",
+        error_code="til_generation_failed",
+    )
+    if not _REQUIRED_KEYS.issubset(result):
+        missing = _REQUIRED_KEYS - result.keys()
+        raise AIProcessingError(
+            code="til_generation_failed",
+            message=f"LLM 응답에 필수 필드 누락: {missing}",
+        )
+    return result
+
+
 async def generate_til(request: TilRequest) -> TilResponse:
     if not request.contents:
         raise ContentValidationError(code="missing_contents", message="contents는 비어있을 수 없습니다.")
 
-    preprocessed = await asyncio.gather(
+    preprocessed_list = await asyncio.gather(
         *(preprocess(item.input_type, item.content) for item in request.contents)
     )
-    joined = _BLOCK_SEPARATOR.join(preprocessed)
 
     title: str | None = None
     til_markdown: str | None = None
+
     if request.generate_til:
-        base_prompt = TIL_SINGLE_PROMPT if len(request.contents) == 1 else TIL_GENERATE_PROMPT
-        prompt = f"{base_prompt}\n\n[입력 콘텐츠]\n{joined}"
-        result = LLMClient().call_json(prompt=prompt, error_code="til_generation_failed")
-        if not _REQUIRED_KEYS.issubset(result):
-            missing = _REQUIRED_KEYS - result.keys()
-            raise AIProcessingError(
-                code="til_generation_failed",
-                message=f"LLM 응답에 필수 필드 누락: {missing}",
+        llm = LLMClient()
+
+        # Step 1: 카드별 개별 요약 (병렬)
+        summaries = list(await asyncio.gather(
+            *(_summarize(llm, p) for p in preprocessed_list)
+        ))
+
+        if len(summaries) <= _BATCH_SIZE:
+            # 카드 수가 배치 크기 이하면 바로 최종 TIL 생성
+            result = await _reduce(llm, summaries)
+        else:
+            # Step 2: 3개씩 묶어 중간 TIL 생성 (배치 간 병렬)
+            batches = [summaries[i:i + _BATCH_SIZE] for i in range(0, len(summaries), _BATCH_SIZE)]
+            intermediate = await asyncio.gather(
+                *(_reduce(llm, batch) for batch in batches)
             )
+            # Step 3: 중간 TIL들을 합쳐 최종 TIL 생성
+            result = await _reduce(llm, [r["til_markdown"] for r in intermediate])
+
         title = result["title"]
         til_markdown = result["til_markdown"]
 
-    # generate_til=True이면 생성된 TIL 마크다운 자체를, 아니면 전처리된 원문 통합본을 임베딩한다.
-    embedding_input = til_markdown if til_markdown is not None else joined
+    embedding_input = til_markdown if til_markdown is not None else _BLOCK_SEPARATOR.join(preprocessed_list)
     embedding = EmbeddingClient().embed(embedding_input)
 
     return TilResponse(title=title, til_markdown=til_markdown, embedding=embedding)
