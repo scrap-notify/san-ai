@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.core.exceptions import AIProcessingError, ResourceNotFoundError
 from app.main import app
-from app.services.recommend import _is_recommendable_result
+from app.services.recommend import _is_recommendable_result, _rank_recommendation_results
 
 client = TestClient(app)
 
@@ -229,6 +229,22 @@ def test_low_quality_tavily_results_are_filtered() -> None:
             "url": "https://example.com/java-backend-complete-guide",
             "title": "Java backend complete guide for beginners",
         },
+        {
+            "url": "https://www.almabetter.com/bytes/articles/backend-technologies",
+            "title": "Backend technologies",
+        },
+        {
+            "url": "https://github.com/zhashkevych/awesome-backend",
+            "title": "Awesome Backend",
+        },
+        {
+            "url": "https://flatironschool.com/blog/what-is-software-engineering-front-end-vs-back-end-explained/",
+            "title": "What is software engineering? Front-end vs Back-end explained",
+        },
+        {
+            "url": "https://www.reddit.com/r/ExperiencedDevs/comments/1jgod64/example/",
+            "title": "Experienced devs discussion",
+        },
     ]
     allowed_result = {
         "url": "https://docs.spring.io/spring-framework/reference/web.html",
@@ -244,5 +260,32 @@ def test_low_quality_tavily_results_are_filtered() -> None:
         False,
         False,
         False,
+        False,
+        False,
+        False,
+        False,
         True,
+    ]
+
+
+def test_recommendation_results_prioritize_authoritative_sources() -> None:
+    results = [
+        {
+            "url": "https://example.com/backend-patterns",
+            "title": "Backend patterns",
+        },
+        {
+            "url": "https://docs.spring.io/spring-framework/reference/web.html",
+            "title": "Spring Framework Web Documentation",
+        },
+        {
+            "url": "https://martinfowler.com/articles/microservices.html",
+            "title": "Microservices architecture article",
+        },
+    ]
+
+    assert _rank_recommendation_results(results) == [
+        "https://docs.spring.io/spring-framework/reference/web.html",
+        "https://martinfowler.com/articles/microservices.html",
+        "https://example.com/backend-patterns",
     ]

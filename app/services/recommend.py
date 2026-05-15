@@ -1,4 +1,5 @@
 import logging
+import re
 from urllib.parse import urlparse
 
 import httpx
@@ -30,17 +31,40 @@ _MAX_LIMIT = 10
 _STAR_FETCH_LIMIT = 30
 _QUERY_REPOSITORY_LIMIT = 20
 _BLOCKED_RESULT_DOMAINS = {
+    "almabetter.com",
     "amazon.com",
     "codingblocks.com",
     "codesignal.com",
     "coursera.org",
+    "flatironschool.com",
     "linkedin.com",
     "medium.com",
+    "reddit.com",
     "scribd.com",
     "stackademic.com",
     "udemy.com",
 }
+_PREFERRED_RESULT_DOMAINS = {
+    "aws.amazon.com",
+    "baeldung.com",
+    "cloud.google.com",
+    "developer.mozilla.org",
+    "docs.docker.com",
+    "docs.github.com",
+    "docs.oracle.com",
+    "docs.python.org",
+    "docs.spring.io",
+    "fastapi.tiangolo.com",
+    "github.blog",
+    "infoq.com",
+    "kubernetes.io",
+    "martinfowler.com",
+    "netflixtechblog.com",
+    "react.dev",
+    "spring.io",
+}
 _BLOCKED_RESULT_TERMS = {
+    "awesome",
     "beginner",
     "book",
     "bootcamp",
@@ -53,12 +77,26 @@ _BLOCKED_RESULT_TERMS = {
     "course",
     "exam",
     "for beginners",
+    "front-end vs back-end",
+    "front end vs back end",
+    "frontend vs backend",
+    "fundamentals of software development",
     "interview",
     "leetcode",
     "prep",
     "questions",
     "roadmap",
+    "what is",
     "zero to hero",
+}
+_PREFERRED_RESULT_TERMS = {
+    "architecture",
+    "best practices",
+    "case study",
+    "documentation",
+    "engineering blog",
+    "performance",
+    "reference",
 }
 logger = logging.getLogger(__name__)
 
@@ -205,7 +243,7 @@ async def _search_tavily(query: str, limit: int) -> list[str]:
             message="Tavily 검색 응답 형식이 올바르지 않습니다.",
         )
 
-    return [item["url"] for item in results if isinstance(item, dict) and _is_recommendable_result(item)]
+    return _rank_recommendation_results(results)
 
 
 def _is_http_url(value: object) -> bool:
@@ -217,7 +255,14 @@ def _is_http_url(value: object) -> bool:
 
 def _is_blocked_domain(hostname: str) -> bool:
     hostname = hostname.lower().removeprefix("www.")
+    if hostname in _PREFERRED_RESULT_DOMAINS:
+        return False
     return any(hostname == domain or hostname.endswith(f".{domain}") for domain in _BLOCKED_RESULT_DOMAINS)
+
+
+def _is_preferred_domain(hostname: str) -> bool:
+    hostname = hostname.lower().removeprefix("www.")
+    return any(hostname == domain or hostname.endswith(f".{domain}") for domain in _PREFERRED_RESULT_DOMAINS)
 
 
 def _is_recommendable_result(item: dict) -> bool:
@@ -234,11 +279,42 @@ def _is_recommendable_result(item: dict) -> bool:
         str(item.get(field) or "").lower()
         for field in ("url", "title", "content", "snippet")
     )
-    if any(term in searchable_text for term in _BLOCKED_RESULT_TERMS):
+    if _contains_blocked_term(searchable_text):
         logger.debug("filtered recommendation term: %s", url)
         return False
 
     return True
+
+
+def _contains_blocked_term(text: str) -> bool:
+    return any(
+        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", text)
+        for term in _BLOCKED_RESULT_TERMS
+    )
+
+
+def _result_quality_score(item: dict) -> int:
+    score = 0
+    parsed = urlparse(str(item.get("url")))
+    if parsed.hostname and _is_preferred_domain(parsed.hostname):
+        score += 3
+
+    searchable_text = " ".join(
+        str(item.get(field) or "").lower()
+        for field in ("url", "title", "content", "snippet")
+    )
+    score += sum(1 for term in _PREFERRED_RESULT_TERMS if term in searchable_text)
+    return score
+
+
+def _rank_recommendation_results(results: list) -> list[str]:
+    scored_results = [
+        (index, _result_quality_score(item), item["url"])
+        for index, item in enumerate(results)
+        if isinstance(item, dict) and _is_recommendable_result(item)
+    ]
+    scored_results.sort(key=lambda result: (-result[1], result[0]))
+    return [url for _, _, url in scored_results]
 
 
 def _build_response(urls: list[str], limit: int) -> GitHubStarsRecommendResponse:
