@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     openai_timeout: float = 60.0
     openai_embedding_model: str = "text-embedding-3-small"
     vectorstore_url: str = "http://localhost:6333"
+    github_api_base_url: str = "https://api.github.com"
+    github_api_token: str | None = None
+    github_timeout: float = 10.0
+    tavily_api_key: str | None = None
+    tavily_api_url: str = "https://api.tavily.com/search"
+    tavily_timeout: float = 15.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -30,6 +30,10 @@ def create_app() -> FastAPI:
             "description": "스크랩된 콘텐츠를 기반으로 단답형·O/X 퀴즈를 생성한다.",
         },
         {
+            "name": "recommend",
+            "description": "GitHub Star 목록을 기반으로 신규 사용자를 위한 외부 글 URL을 추천한다.",
+        },
+        {
             "name": "health",
             "description": "서버 상태 확인",
         },
@@ -37,7 +41,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="SAN AI Server",
-        description="학습 카드 콘텐츠를 분석·요약·검색·퀴즈 생성하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/search`, `/ai/quiz` 엔드포인트를 사용한다.",
+        description="학습 카드 콘텐츠를 분석·요약·검색·퀴즈 생성·추천하는 AI 서버. 백엔드는 `/ai/analyze`, `/ai/til`, `/ai/search`, `/ai/quiz`, `/ai/recommend/github-stars` 엔드포인트를 사용한다.",
         version="1.0.0",
         openapi_tags=tags_metadata,
     )

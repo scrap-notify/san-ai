@@ -19,12 +19,27 @@ class ContentValidationError(Exception):
         self.message = message
 
 
+class ResourceNotFoundError(Exception):
+    """요청한 외부 리소스를 찾을 수 없을 때 발생하는 오류. 404로 응답한다."""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.message = message
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     # ContentValidationError는 400 상태 코드로 반환한다.
     @app.exception_handler(ContentValidationError)
     async def content_validation_exception_handler(request: Request, exc: ContentValidationError):
         return JSONResponse(
             status_code=400,
+            content={"error": exc.code, "message": exc.message},
+        )
+
+    @app.exception_handler(ResourceNotFoundError)
+    async def resource_not_found_exception_handler(request: Request, exc: ResourceNotFoundError):
+        return JSONResponse(
+            status_code=404,
             content={"error": exc.code, "message": exc.message},
         )
 
