@@ -145,66 +145,7 @@
 
 ---
 
-## 3. 카드 상세 문서화
-
-> 단일 카드 원문을 요약 없이 그대로 구조화해 마크다운 문서로 반환한다.
-> 원문 흐름을 유지하며 구조화하는 카드 상세보기 전용 엔드포인트.
-
-**`POST /ai/card`**
-
----
-
-### 입력값 (Request Body)
-
-| 필드명 | 타입 | 필수 여부 | 설명 |
-| --- | --- | --- | --- |
-| `content` | `object` | ✅ 필수 | 단일 카드 콘텐츠. `input_type`(`url`/`text`/`image`)과 `content`(URL 문자열, 텍스트 원문, S3 이미지 링크) 포함 |
-
----
-
-### 출력값 (Response Body)
-
-| 필드명 | 타입 | 설명 |
-| --- | --- | --- |
-| `title` | `string` | 원문 내용을 대표하는 한 줄 제목 |
-| `card_markdown` | `string` | 원문을 구조화한 마크다운 문서. 요약 없이 원문 흐름 그대로 유지. 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다 |
-| `embedding` | `number[]` | 카드 콘텐츠 임베딩 벡터 |
-
-### 요청/응답 예시
-
-**Request**
-
-```json
-{
-  "content": {
-    "input_type": "url",
-    "content": "https://fastapi.tiangolo.com/tutorial/first-steps/"
-  }
-}
-```
-
-**Response**
-
-```json
-{
-  "title": "FastAPI 첫 번째 단계",
-  "card_markdown": "## FastAPI 소개\n\nFastAPI는 Python 3.8+를 기반으로 한 현대적인 고성능 웹 프레임워크다. ...\n\n## 첫 번째 API 만들기\n\n```python\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n```",
-  "embedding": [0.012, -0.453, 0.891, "..."]
-}
-```
-
-### 에러 코드
-
-| 에러 코드 | 상태코드 | 설명 |
-| --- | --- | --- |
-| `missing_content` | `400` | `content` 필드가 비어있는 경우 |
-| `invalid_input_type` | `400` | `input_type`이 `url` / `text` / `image` 외의 값인 경우 |
-| `card_detail_failed` | `422` | 카드 마크다운 문서 생성 실패 |
-| `embedding_failed` | `422` | 임베딩 벡터 생성 실패 |
-
----
-
-## 4. 자연어 카드 검색
+## 3. 자연어 카드 검색
 
 > 사용자의 자연어 질의를 임베딩 벡터로 변환한다.
 백엔드가 이 벡터로 벡터 DB를 조회해 유사 카드를 검색·후보 조회·재정렬 후 결과를 반환한다.
@@ -255,7 +196,7 @@
 
 ---
 
-## 5. 퀴즈 생성
+## 4. 퀴즈 생성
 
 > 스크랩된 콘텐츠를 기반으로 퀴즈 문제를 생성한다.
 > - 콘텐츠 1개당 문제 1개가 자동으로 생성된다.
@@ -348,7 +289,66 @@
 
 ---
 
-## 5. GitHub Star 기반 cold-start 글 추천
+## 5. 카드 상세 문서화
+
+> 단일 카드 원문을 요약 없이 그대로 구조화해 마크다운 문서로 반환한다.
+> 원문 흐름을 유지하며 구조화하는 카드 상세보기 전용 엔드포인트.
+
+**`POST /ai/card`**
+
+---
+
+### 입력값 (Request Body)
+
+| 필드명 | 타입 | 필수 여부 | 설명 |
+| --- | --- | --- | --- |
+| `content` | `object` | ✅ 필수 | 단일 카드 콘텐츠. `input_type`(`url`/`text`/`image`)과 `content`(URL 문자열, 텍스트 원문, S3 이미지 링크) 포함 |
+
+---
+
+### 출력값 (Response Body)
+
+| 필드명 | 타입 | 설명 |
+| --- | --- | --- |
+| `title` | `string` | 원문 내용을 대표하는 한 줄 제목 |
+| `card_markdown` | `string` | 원문을 구조화한 마크다운 문서. 요약 없이 원문 흐름 그대로 유지. 코드가 포함된 경우 언어 식별자가 명시된 코드 펜스(` ```python ` 등)로 감싸 반환하며, 언어를 특정할 수 없으면 ` ```text ` 를 사용한다 |
+| `embedding` | `number[]` | 카드 콘텐츠 임베딩 벡터 |
+
+### 요청/응답 예시
+
+**Request**
+
+```json
+{
+  "content": {
+    "input_type": "url",
+    "content": "https://fastapi.tiangolo.com/tutorial/first-steps/"
+  }
+}
+```
+
+**Response**
+
+```json
+{
+  "title": "FastAPI 첫 번째 단계",
+  "card_markdown": "## FastAPI 소개\n\nFastAPI는 Python 3.8+를 기반으로 한 현대적인 고성능 웹 프레임워크다. ...\n\n## 첫 번째 API 만들기\n\n```python\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/\")\ndef read_root():\n    return {\"Hello\": \"World\"}\n```",
+  "embedding": [0.012, -0.453, 0.891, "..."]
+}
+```
+
+### 에러 코드
+
+| 에러 코드 | 상태코드 | 설명 |
+| --- | --- | --- |
+| `missing_content` | `400` | `content` 필드가 비어있는 경우 |
+| `invalid_input_type` | `400` | `input_type`이 `url` / `text` / `image` 외의 값인 경우 |
+| `card_detail_failed` | `422` | 카드 마크다운 문서 생성 실패 |
+| `embedding_failed` | `422` | 임베딩 벡터 생성 실패 |
+
+---
+
+## 6. GitHub Star 기반 cold-start 글 추천
 
 > GitHub 사용자의 Star 목록을 기반으로 신규 사용자가 스크랩할 만한 외부 글 URL을 추천한다.
 > 추천 결과는 `POST /ai/analyze` 요청 데이터에 바로 넣을 수 있는 형태로 반환한다.
@@ -454,23 +454,14 @@
     - `generate_til=false`이면 임베딩만 반환
 - 용도: 리콜 TIL 페이지
 
-### 3. 카드 상세 문서화
-
-- 입력: 단일 카드 콘텐츠
-- 출력: 원문을 구조화한 마크다운 문서, 임베딩 벡터
-- 동작:
-    - 단일 카드 원문을 요약 없이 그대로 구조화
-    - 코드가 있으면 언어 식별자 있는 코드 펜스로 감쌈
-- 용도: 카드 상세보기 페이지
-
-### 4. 자연어 카드 검색
+### 3. 자연어 카드 검색
 
 - 입력: 사용자의 자연어 질문
 - 출력: 임베딩 벡터 결과값
 - 동작: AI 서버가 자연어 질의를 임베딩하고 결과값을 생성한다
 - 용도: 검색창에서 저장된 지식카드를 탐색하는 데 사용한다.
 
-### 5. 퀴즈 생성
+### 4. 퀴즈 생성
 
 - 입력: 스크랩된 콘텐츠 목록(`url`/`text`/`image`), 퀴즈 유형(`short_answer` / `ox`)
 - 출력: 퀴즈 유형 + 문제 목록
@@ -481,7 +472,16 @@
     - 질문·정답·해설은 콘텐츠 언어에 관계없이 한국어로 생성된다. 단, 고유 명사·기술 용어는 원문 표기 유지
 - 용도: 학습한 내용을 퀴즈로 복습하는 기능에 사용한다
 
-### 5. GitHub Star 기반 cold-start 글 추천
+### 5. 카드 상세 문서화
+
+- 입력: 단일 카드 콘텐츠
+- 출력: 원문을 구조화한 마크다운 문서, 임베딩 벡터
+- 동작:
+    - 단일 카드 원문을 요약 없이 그대로 구조화
+    - 코드가 있으면 언어 식별자 있는 코드 펜스로 감쌈
+- 용도: 카드 상세보기 페이지
+
+### 6. GitHub Star 기반 cold-start 글 추천
 
 - 입력: GitHub 사용자명, 추천 결과 최대 개수
 - 출력: `POST /ai/analyze` 요청 Body로 바로 사용할 수 있는 URL 추천 목록
