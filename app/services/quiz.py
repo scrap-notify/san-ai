@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from app.core.exceptions import AIProcessingError, ContentValidationError
 from app.llms import LLMClient
@@ -7,11 +8,11 @@ from app.schemas.quiz import OXQuestion, QuizRequest, QuizResponse, QuizType, Sh
 from app.services.preprocessor import preprocess
 
 _SHORT_ANSWER_REQUIRED_KEYS = {"question", "answer"}
-_OX_REQUIRED_KEYS = {"statement", "is_correct"}
+_OX_REQUIRED_KEYS = {"statement"}
 
 
-async def _call_single(client: LLMClient, quiz_type: QuizType, content: str) -> dict:
-    prompt = get_quiz_prompt(quiz_type, content, 1)
+async def _call_single(client: LLMClient, quiz_type: QuizType, content: str, is_correct: bool | None = None) -> dict:
+    prompt = get_quiz_prompt(quiz_type, content, 1, is_correct)
     result = await client.acall_json(prompt=prompt, error_code="quiz_generation_failed")
     raw_questions = result.get("questions")
     if not isinstance(raw_questions, list) or len(raw_questions) != 1:
@@ -32,9 +33,17 @@ async def generate_quiz(request: QuizRequest) -> QuizResponse:
     )
 
     client = LLMClient()
-    raw_items = await asyncio.gather(
-        *(_call_single(client, request.quiz_type, content) for content in preprocessed)
-    )
+    if request.quiz_type == QuizType.ox:
+        is_correct_list = [random.choice([True, False]) for _ in preprocessed]
+        raw_items = await asyncio.gather(
+            *(_call_single(client, request.quiz_type, content, is_correct)
+              for content, is_correct in zip(preprocessed, is_correct_list))
+        )
+    else:
+        is_correct_list = []
+        raw_items = await asyncio.gather(
+            *(_call_single(client, request.quiz_type, content) for content in preprocessed)
+        )
 
     questions: list[ShortAnswerQuestion | OXQuestion] = []
     if request.quiz_type == QuizType.short_answer:
@@ -51,7 +60,7 @@ async def generate_quiz(request: QuizRequest) -> QuizResponse:
                 explanation=item.get("explanation"),
             ))
     elif request.quiz_type == QuizType.ox:
-        for item in raw_items:
+        for item, is_correct in zip(raw_items, is_correct_list):
             if not _OX_REQUIRED_KEYS.issubset(item):
                 missing = _OX_REQUIRED_KEYS - item.keys()
                 raise AIProcessingError(
@@ -60,7 +69,7 @@ async def generate_quiz(request: QuizRequest) -> QuizResponse:
                 )
             questions.append(OXQuestion(
                 statement=item["statement"],
-                is_correct=item["is_correct"],
+                is_correct=is_correct,
                 explanation=item.get("explanation"),
             ))
 

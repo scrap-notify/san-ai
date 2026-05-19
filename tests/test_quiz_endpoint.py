@@ -152,13 +152,14 @@ def test_missing_required_field_returns_422() -> None:
 
 
 # ── O/X 퀴즈 정상 처리 ────────────────────────────────────────────────────────
-# 콘텐츠 2개 → O/X 문제 2개 반환.
+# 콘텐츠 2개 → O/X 문제 2개 반환. is_correct는 서비스가 결정한 값을 사용한다.
 def test_ox_returns_questions() -> None:
     with patch("app.services.quiz.preprocess", new=AsyncMock(side_effect=lambda t, c: c)), \
-         patch("app.services.quiz.LLMClient") as llm_cls:
+         patch("app.services.quiz.LLMClient") as llm_cls, \
+         patch("app.services.quiz.random.choice", side_effect=[True, False]):
         llm_cls.return_value.acall_json = AsyncMock(side_effect=[
-            {"questions": [{"statement": "FastAPI는 Pydantic으로 타입 검증을 한다.", "is_correct": True, "explanation": "FastAPI는 Pydantic 모델을 통해 타입을 검증한다."}]},
-            {"questions": [{"statement": "uvicorn은 WSGI 서버다.", "is_correct": False, "explanation": "uvicorn은 ASGI 서버다."}]},
+            {"questions": [{"statement": "FastAPI는 Pydantic으로 타입 검증을 한다.", "explanation": "FastAPI는 Pydantic 모델을 통해 타입을 검증한다."}]},
+            {"questions": [{"statement": "uvicorn은 WSGI 서버다.", "explanation": "uvicorn은 ASGI 서버다."}]},
         ])
 
         response = client.post(
@@ -184,9 +185,10 @@ def test_ox_returns_questions() -> None:
 # O/X 문제에서 explanation이 없으면 null로 반환된다.
 def test_ox_without_explanation_returns_null() -> None:
     with patch("app.services.quiz.preprocess", new=AsyncMock(side_effect=lambda t, c: c)), \
-         patch("app.services.quiz.LLMClient") as llm_cls:
+         patch("app.services.quiz.LLMClient") as llm_cls, \
+         patch("app.services.quiz.random.choice", return_value=True):
         llm_cls.return_value.acall_json = AsyncMock(return_value={
-            "questions": [{"statement": "FastAPI는 비동기를 지원한다.", "is_correct": True}]
+            "questions": [{"statement": "FastAPI는 비동기를 지원한다."}]
         })
 
         response = client.post(
@@ -201,12 +203,13 @@ def test_ox_without_explanation_returns_null() -> None:
     assert response.json()["questions"][0]["explanation"] is None
 
 
-# O/X 문제 응답에 필수 필드(statement, is_correct)가 누락되면 422 quiz_generation_failed.
+# O/X 문제 응답에 필수 필드(statement)가 누락되면 422 quiz_generation_failed.
 def test_ox_missing_required_field_returns_422() -> None:
     with patch("app.services.quiz.preprocess", new=AsyncMock(side_effect=lambda t, c: c)), \
-         patch("app.services.quiz.LLMClient") as llm_cls:
+         patch("app.services.quiz.LLMClient") as llm_cls, \
+         patch("app.services.quiz.random.choice", return_value=True):
         llm_cls.return_value.acall_json = AsyncMock(return_value={
-            "questions": [{"statement": "statement만 있고 is_correct 없음"}]
+            "questions": [{"explanation": "statement 필드 없음"}]
         })
 
         response = client.post(
