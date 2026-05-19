@@ -55,12 +55,10 @@ _ERROR_RESPONSES = {
 
 @router.post(
     "/til",
-    summary="TIL 생성 / 카드 상세 문서화",
+    summary="TIL 생성",
     description=(
-        "학습 카드 콘텐츠를 받아 마크다운 문서와 임베딩을 반환합니다.\n\n"
-        "**`contents` 개수에 따른 동작 차이**\n"
-        "- `contents` 1개: 원문 내용을 그대로 구조화한 마크다운 반환 (카드 상세보기용)\n"
-        "- `contents` 2개 이상: 여러 원문을 주제별로 재구성한 마크다운 반환 (TIL 생성용)\n\n"
+        "여러 카드 콘텐츠를 받아 오늘 배운 내용을 요약/정리한 TIL 마크다운 문서와 임베딩을 반환합니다.\n\n"
+        "각 카드를 개별 요약(병렬)한 뒤, 맥락을 파악해 주제별로 묶은 TIL 문서를 생성합니다.\n\n"
         "**`generate_til` 플래그**\n"
         "- `true`: 마크다운 문서를 생성해 `til_markdown` 필드에 반환합니다.\n"
         "- `false`: 마크다운 생성 없이 임베딩만 반환합니다. `til_markdown`은 `null`입니다.\n\n"
@@ -74,31 +72,35 @@ async def til(
         TilRequest,
         Body(
             openapi_examples={
-                "single_content": {
-                    "summary": "단일 콘텐츠 문서화 (카드 상세보기용)",
+                "til_generate_url": {
+                    "summary": "TIL 생성 (URL 3개)",
                     "value": {
                         "contents": [
-                            {"input_type": "url", "content": "https://fastapi.tiangolo.com/tutorial/first-steps/"},
+                            {"input_type": "url", "content": "https://fastapi.tiangolo.com/async/"},
+                            {"input_type": "url", "content": "https://javascript.info/closure"},
+                            {"input_type": "url", "content": "https://web.dev/articles/promises"},
                         ],
                         "generate_til": True,
                     },
                 },
-                "multiple_contents": {
-                    "summary": "복수 콘텐츠 TIL 생성",
+                "til_generate_text": {
+                    "summary": "TIL 생성 (텍스트 3개)",
                     "value": {
                         "contents": [
-                            {"input_type": "url", "content": "https://react.dev/learn/managing-state"},
-                            {"input_type": "text", "content": "클로저는 함수가 선언될 당시의 외부 변수를 기억하는 개념이다."},
-                            {"input_type": "image", "content": "https://s3.amazonaws.com/bucket/capture.png"},
+                            {"input_type": "text", "content": "클로저(Closure)는 함수가 선언될 당시의 외부 스코프 변수를 기억하고 접근할 수 있는 특성이다. 내부 함수가 외부 함수의 실행이 끝난 뒤에도 외부 변수를 참조할 수 있으며, 이를 통해 상태를 캡슐화하거나 팩토리 함수를 만드는 데 활용된다."},
+                            {"input_type": "text", "content": "Docker 컨테이너는 애플리케이션과 실행 환경을 하나의 단위로 패키징한 것이다. 호스트 OS 커널을 공유하되 프로세스, 파일시스템, 네트워크를 격리해 가볍고 빠르게 실행된다. 이미지는 컨테이너의 읽기 전용 템플릿이며 컨테이너는 이미지 위에 쓰기 레이어를 추가한 실행 인스턴스다."},
+                            {"input_type": "text", "content": "의존성 주입(DI)은 객체가 필요로 하는 의존성을 내부에서 직접 생성하지 않고 외부에서 주입받는 설계 패턴이다. 결합도를 낮추고 테스트 가능성을 높이며, 생성자 주입, 세터 주입, 인터페이스 주입 세 가지 방식이 있다. FastAPI의 Depends()가 대표적인 프레임워크 수준의 DI 구현 예시다."},
                         ],
                         "generate_til": True,
                     },
                 },
-                "generate_til_false": {
+                "embedding_only": {
                     "summary": "임베딩만 반환 (마크다운 없음)",
                     "value": {
                         "contents": [
-                            {"input_type": "url", "content": "https://react.dev/learn/managing-state"},
+                            {"input_type": "url", "content": "https://fastapi.tiangolo.com/async/"},
+                            {"input_type": "url", "content": "https://javascript.info/closure"},
+                            {"input_type": "url", "content": "https://web.dev/articles/promises"},
                         ],
                         "generate_til": False,
                     },
