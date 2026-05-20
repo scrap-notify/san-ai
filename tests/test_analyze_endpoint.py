@@ -29,7 +29,7 @@ skip_if_no_url = pytest.mark.skipif(
     reason="tests/fixtures/test_url.txt 없거나 비어있음 — URL 통합 테스트 스킵",
 )
 
-_VALID_CATEGORIES = {"프론트엔드", "백엔드", "AI/ML", "데이터", "인프라/DevOps", "CS", "보안", "모바일", "기타"}
+_VALID_CATEGORIES = {"프론트엔드", "백엔드", "프로그래밍 언어", "AI/ML", "데이터 엔지니어링", "데이터베이스", "인프라/DevOps", "CS", "보안", "모바일", "아키텍처/설계", "테스트/QA", "기타"}
 
 
 def _print_response(label: str, body: dict) -> None:

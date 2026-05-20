@@ -19,7 +19,7 @@ load_dotenv()
 _URL_FIXTURE = Path("tests/fixtures/test_url.txt")
 _IMAGE_FIXTURE = Path("tests/fixtures/test_image.png")
 
-_VALID_CATEGORIES = {"프론트엔드", "백엔드", "AI/ML", "데이터", "인프라/DevOps", "CS", "보안", "모바일", "기타"}
+_VALID_CATEGORIES = {"프론트엔드", "백엔드", "프로그래밍 언어", "AI/ML", "데이터 엔지니어링", "데이터베이스", "인프라/DevOps", "CS", "보안", "모바일", "아키텍처/설계", "테스트/QA", "기타"}
 
 skip_if_no_key = pytest.mark.skipif(
     not os.getenv("OPENAI_API_KEY"),
