@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 from app.core.exceptions import AIProcessingError, ContentValidationError
 from app.llms import EmbeddingClient, LLMClient
@@ -9,6 +10,14 @@ from app.services.preprocessor import preprocess
 _BLOCK_SEPARATOR = "\n\n---\n\n"
 _BATCH_SIZE = 3
 _REQUIRED_KEYS = {"title", "til_markdown"}
+
+# CommonMark에서 닫는 **앞이 구두점이고 뒤가 한글이면 closing delimiter로 인식 실패
+# ex) **미사용("Slow pipes")**과 → **미사용("Slow pipes")** 과
+_BOLD_CLOSE_RE = re.compile(r'(["\)\'\.\,\!\?])\*\*([가-힣])')
+
+
+def _fix_bold_closing(text: str) -> str:
+    return _BOLD_CLOSE_RE.sub(r'\1** \2', text)
 
 
 async def _summarize(llm: LLMClient, preprocessed: str) -> str:
@@ -65,7 +74,7 @@ async def generate_til(request: TilRequest) -> TilResponse:
             result = await _reduce(llm, [r["til_markdown"] for r in intermediate])
 
         title = result["title"]
-        til_markdown = result["til_markdown"]
+        til_markdown = _fix_bold_closing(result["til_markdown"])
 
     embedding_input = til_markdown if til_markdown is not None else _BLOCK_SEPARATOR.join(preprocessed_list)
     embedding = EmbeddingClient().embed(embedding_input)
