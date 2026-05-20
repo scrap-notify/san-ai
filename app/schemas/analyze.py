@@ -31,7 +31,7 @@ class AnalyzeResponse(BaseModel):
         examples=["상태는 화면 정보를 기억한다.\nuseState로 상태를 선언한다.\n상태 위치가 설계의 핵심이다."],
     )
     tags: list[str] = Field(description="핵심 키워드 태그 목록 (5개 이내)", examples=[["React", "상태관리", "useState", "리렌더링"]])
-    category: str = Field(description="프론트엔드 | 백엔드 | AI/ML | 데이터 | 인프라/DevOps | CS | 보안 | 모바일 | 기타 중 하나", examples=["프론트엔드"])
+    category: str = Field(description="프론트엔드 | 백엔드 | 프로그래밍 언어 | AI/ML | 데이터 엔지니어링 | 데이터베이스 | 인프라/DevOps | CS | 보안 | 모바일 | 아키텍처/설계 | 테스트/QA | 기타 중 하나", examples=["프론트엔드"])
     embedding: list[float] = Field(description="입력 데이터 기반 임베딩 벡터 결과값")
 
     model_config = ConfigDict(
